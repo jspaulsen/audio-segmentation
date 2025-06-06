@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from audio_segmentation import NemoTranscriber, NemoModel, transcribe_audio
+from audio_segmentation import WhisperxTranscriber, WhisperxModel, transcribe_audio
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
     if not audio_fpath.exists():
         raise FileNotFoundError(f"Audio file {audio_fpath} does not exist.")
     
-    transcriber = NemoTranscriber(model_name=NemoModel.PARAKEET_TDT_V2)
+    transcriber = WhisperxTranscriber(model_name=WhisperxModel.Tiny)
     results = transcribe_audio(
         audio=audio_fpath,
         transcriber=transcriber,

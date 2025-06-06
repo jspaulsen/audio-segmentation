@@ -17,7 +17,7 @@ def main():
     results = transcribe_audio(
         audio=audio_fpath,
         transcriber=transcriber,
-        word_level_segmentation=True,
+        use_sentence_segmentation=True,
     )
 
     for segment in results:
