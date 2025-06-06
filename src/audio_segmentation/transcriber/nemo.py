@@ -2,7 +2,7 @@ from enum import StrEnum
 import logging
 from typing import Protocol, TypedDict, cast
 
-from nemo.collections.asr.models import ASRModel, EncDecRNNTBPEModel, EncDecMultiTaskModel
+from nemo.collections.asr.models import EncDecRNNTBPEModel, EncDecMultiTaskModel
 import numpy as np
 import pydub
 
@@ -183,6 +183,8 @@ class NemoTranscriber(Transcriber):
 
             case _:
                 raise ValueError(f"Unsupported model name: {model_name}")
+        
+        super().__init__()
         
     @property
     def ideal_segment_length(self) -> int | None:

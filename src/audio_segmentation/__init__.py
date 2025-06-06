@@ -1,3 +1,5 @@
+import importlib.util
+
 from audio_segmentation.segment import Segment
 from audio_segmentation.transcribe import transcribe_audio
 from audio_segmentation.transcriber.transcriber import (
@@ -5,7 +7,17 @@ from audio_segmentation.transcriber.transcriber import (
     TranscriptionResult,
 )
 
-from audio_segmentation.transcriber.nemo import (
-    NemoTranscriber, 
-    NemoModel,
-)
+
+# Only import transcribers if their respective libraries are available
+if importlib.util.find_spec("nemo"):
+    from audio_segmentation.transcriber.nemo import (
+        NemoTranscriber, 
+        NemoModel,
+    )
+
+
+if importlib.util.find_spec("whisperx"):
+    from audio_segmentation.transcriber.whisperx import (
+        WhisperxTranscriber, 
+        WhisperxModel,
+    )

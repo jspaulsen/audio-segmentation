@@ -28,6 +28,10 @@ To be announced. Should be able to install via uv and git.
 
 - `ffmpeg` - for audio processing
 
+If using Whisperx for transcription, you will also (probably) need:
+
+- `libcudnn9` and `libcudnn9-dev`
+
 ## Usage
 
 Refer to the examples directory for more concrete usage examples.
@@ -47,6 +51,7 @@ results = transcribe_audio(
 ### Nemo
 
 - `parakeet-tdt-v2` - Parakeet TDT V2 model
+- `whisperx` - WhisperX model (requires additional dependencies)
 
 
 

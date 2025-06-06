@@ -91,9 +91,17 @@ def segment_full_audio(
             raise_exception=raise_exception,
         )
 
-        # TODO: Temporary
-        print(f"Start is {start}, end is {end}", flush=True)
-        print(f"Processed segment {start / 1000:.2f}s - {end / 1000:.2f}s, {len(segments)} segments found.", flush=True)
+        logger.debug(
+            f"Transcribed segment from {start / 1000:.2f}s to {end / 1000:.2f}s, found {len(segments)} segments.",
+            extra={
+                'start': start,
+                'end': end,
+                'segment_length': segment_length,
+                'total_length': total_length,
+                'num_segments': len(segments),
+                'last_segment': last_segment,
+            },
+        )
 
         # If, for whatever reason, we don't have any segments, we should just
         # skip this segment and move on to the next one.
