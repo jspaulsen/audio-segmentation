@@ -160,6 +160,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "nltk" },
+    { name = "pydub" },
 ]
 
 [package.optional-dependencies]
@@ -178,6 +179,7 @@ requires-dist = [
     { name = "cuda-python", marker = "extra == 'parakeet'", specifier = ">=12.9.0" },
     { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'parakeet'", specifier = ">=2.3.1" },
     { name = "nltk", specifier = ">=3.9.1" },
+    { name = "pydub", specifier = ">=0.25.1" },
 ]
 provides-extras = ["parakeet"]
 

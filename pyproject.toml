@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "nltk>=3.9.1",
+    "pydub>=0.25.1",
 ]
 
 [project.optional-dependencies]

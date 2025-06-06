@@ -109,9 +109,7 @@ def segment_full_audio(
     return complete_segments
 
 
-# TODO: Consider renaming this; while it does transcribe the audio, it also returns the
-# audio segments as well [of varying accuracy, naturally].
-def transcribe(
+def transcribe_audio(
     audio: Path | str,
     transcriber: Transcriber,
     segment_length: int | None = None,
@@ -123,15 +121,20 @@ def transcribe(
 
     Args:
         audio (Path | str): Path to the audio file.
-        transcriber (Transcriber): The transcriber to use.
-        segment_length (int | None): Length of segments to split the audio into.
-        word_level_segmentation (bool): Whether to use word-level segmentation.
+        transcriber (Transcriber): The transcriber to use for transcription.
+        segment_length (int | None): Length of each segment in milliseconds.
+            NOTE: Unless you have a specific reason to change this, you should leave this as None
+                and let the transcriber decide the ideal segment length.
+        word_level_segmentation (bool): Whether to perform word-level segmentation.
+        raise_exception (bool): If True, raises an exception if no words are found in a segment
+            when word_level_segmentation is True. Defaults to False.
 
     Returns:
         list[Segment]: List of segments with transcription results.
     """
     audio = Path(audio)
     segment_length = segment_length or transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
+    
     if not audio.exists():
         raise FileNotFoundError(f"Audio file {audio} does not exist.")
     
