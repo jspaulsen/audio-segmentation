@@ -13,7 +13,7 @@ def main():
     if not audio_fpath.exists():
         raise FileNotFoundError(f"Audio file {audio_fpath} does not exist.")
     
-    transcriber = NemoTranscriber(model_name=NemoModel.PARAKEET_TDT_V2)
+    transcriber = NemoTranscriber(model_name=NemoModel.CANARY_1B_FLASH)
     results = transcribe_audio(
         audio=audio_fpath,
         transcriber=transcriber,

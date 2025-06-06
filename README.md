@@ -42,6 +42,14 @@ results = transcribe_audio(
 )
 ```
 
+## Supported Models
+
+### Nemo
+
+- `parakeet-tdt-v2` - Parakeet TDT V2 model
+
+
+
 ## Known (Potential) Issues
 
 - Optional dependencies aren't handled correctly and imports may fail if the optional dependencies are not installed.
