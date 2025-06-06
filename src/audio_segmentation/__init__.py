@@ -5,7 +5,7 @@ from audio_segmentation.transcriber.transcriber import (
     TranscriptionResult,
 )
 
-from audio_segmentation.transcriber.parakeet import (
-    ParakeetTranscriber, 
-    ParakeetModel,
+from audio_segmentation.transcriber.nemo import (
+    NemoTranscriber, 
+    NemoModel,
 )

@@ -1,4 +1,5 @@
 import io
+import logging
 from pathlib import Path
 from typing import cast
 
@@ -7,6 +8,9 @@ import pydub
 from audio_segmentation.segment import Segment
 from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
 from audio_segmentation.transcriber.transcriber import Transcriber
+
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_SEGMENT_LENGTH_MS = 60 * 60 * 1000  # 1 hour in milliseconds
@@ -24,22 +28,33 @@ def reformat_audio(audio: pydub.AudioSegment) -> pydub.AudioSegment:
 def segment_audio_segment(
     audio_segment: pydub.AudioSegment,
     transcriber: Transcriber,
-    word_level_segmentation: bool = True,
+    use_sentence_segmentation: bool = True,
     raise_exception: bool = False, # Only applies if word_level_segmentation is True
 ) -> list[Segment]:
+    if use_sentence_segmentation and (not transcriber.supports_word_level_segmentation or not transcriber.includes_punctuation):
+        logger.warning(
+            "Transcriber does not support word-level segmentation or punctuation; using the default segmenter instead.",
+            extra={
+                'transcriber': transcriber.__class__.__name__,
+                'supports_word_level_segmentation': transcriber.supports_word_level_segmentation,
+                'includes_punctuation': transcriber.includes_punctuation,
+            },
+        )
+
+        use_sentence_segmentation = False
+
     result = transcriber.transcribe(
         audio_segment=audio_segment,
-        word_level_segmentation=word_level_segmentation,
+        word_level_segmentation=use_sentence_segmentation,
     )
 
-    if word_level_segmentation:
+    if use_sentence_segmentation:
         return sentence_segmenter(
             segmented_transcription=result,
             exception_if_no_words=raise_exception,
         )
 
     return default_segmenter(segments=result.segments)
-
 
 
 # TODO: Rename me; this splits the audio into segments of a fixed length
@@ -50,8 +65,8 @@ def segment_full_audio(
     full_audio: pydub.AudioSegment,
     transcriber: Transcriber,
     segment_length: int, # Length in milliseconds
-    word_level_segmentation: bool = True,
-    raise_exception: bool = False,  # Only applies if word_level_segmentation is True
+    use_sentence_segmentation: bool = True,
+    raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
 ) -> list[Segment]:
     total_length = len(full_audio)
     complete_segments: list[Segment] = []
@@ -72,7 +87,7 @@ def segment_full_audio(
         segments = segment_audio_segment(
             audio_segment=audio_segment,
             transcriber=transcriber,
-            word_level_segmentation=word_level_segmentation,
+            use_sentence_segmentation=use_sentence_segmentation,
             raise_exception=raise_exception,
         )
 
@@ -113,8 +128,8 @@ def transcribe_audio(
     audio: Path | str,
     transcriber: Transcriber,
     segment_length: int | None = None,
-    word_level_segmentation: bool = True,
-    raise_exception: bool = False,  # Only applies if word_level_segmentation is True
+    use_sentence_segmentation: bool = True,
+    raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
 ) -> list[Segment]:
     """
     Transcribe the audio file using the specified transcriber.
@@ -125,9 +140,9 @@ def transcribe_audio(
         segment_length (int | None): Length of each segment in milliseconds.
             NOTE: Unless you have a specific reason to change this, you should leave this as None
                 and let the transcriber decide the ideal segment length.
-        word_level_segmentation (bool): Whether to perform word-level segmentation.
+        use_sentence_segmentation (bool): Whether to perform word-level segmentation.
         raise_exception (bool): If True, raises an exception if no words are found in a segment
-            when word_level_segmentation is True. Defaults to False.
+            when use_sentence_segmentation is True. Defaults to False.
 
     Returns:
         list[Segment]: List of segments with transcription results.
@@ -152,6 +167,6 @@ def transcribe_audio(
         full_audio=audio_segment,
         transcriber=transcriber,
         segment_length=segment_length,
-        word_level_segmentation=word_level_segmentation,
+        use_sentence_segmentation=use_sentence_segmentation,
         raise_exception=raise_exception,
     )

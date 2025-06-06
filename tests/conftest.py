@@ -1,15 +1,21 @@
+from pathlib import Path
 import pydub
 import pytest
 
 
 @pytest.fixture
-def ten_minute_segment() -> pydub.AudioSegment:
+def ten_minute_segment_path() -> Path:
+    return Path('tests/fixtures/10m_segment.wav')
+
+
+@pytest.fixture
+def ten_minute_segment(ten_minute_segment_path) -> pydub.AudioSegment:
     """
     Fixture that provides a 10-minute audio segment.
     This is used to test the transcriber with a longer audio segment.
     """
     audio = pydub.AudioSegment.from_file(
-        'tests/fixtures/10m_segment.wav', 
+        ten_minute_segment_path,
         format='wav',
     )
 

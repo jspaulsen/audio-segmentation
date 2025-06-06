@@ -33,7 +33,6 @@ class Transcriber(abc.ABC):
         raise NotImplementedError("Transcriber must implement the transcribe method.")
     
     @property
-    @abc.abstractmethod
     def ideal_segment_length(self) -> int | None:
         """
         Ideal segment length in milliseconds for the transcriber.
@@ -41,3 +40,19 @@ class Transcriber(abc.ABC):
         for transcription.
         """
         return None
+    
+    @property
+    @abc.abstractmethod
+    def supports_word_level_segmentation(self) -> bool:
+        """
+        Returns whether the transcriber supports word level segmentation.
+        """
+        raise NotImplementedError("Transcriber must implement the supports_word_level_segmentation property.")
+    
+    @property
+    @abc.abstractmethod
+    def includes_punctuation(self) -> bool:
+        """
+        Returns whether the transcriber includes punctuation in the transcription.
+        """
+        raise NotImplementedError("Transcriber must implement the includes_punctuation property.")
