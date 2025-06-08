@@ -79,7 +79,8 @@ class WhisperxTranscriber(Transcriber):
     def transcribe(
         self, 
         audio_segment: pydub.AudioSegment,
-        word_level_segmentation: bool = True
+        word_level_segmentation: bool = True,
+        **kwargs,
     ) -> TranscriptionResult:
         """
         Transcribes the given audio segment using WhisperX.
@@ -100,6 +101,7 @@ class WhisperxTranscriber(Transcriber):
             data,
             batch_size=self.batch_size,
             language='en',
+            **kwargs,
         )
         
         aligned = whisperx.align(

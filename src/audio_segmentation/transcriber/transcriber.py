@@ -29,6 +29,7 @@ class Transcriber(abc.ABC):
         self, 
         audio_segment: pydub.AudioSegment,
         word_level_segmentation: bool = True,
+        **kwargs,
     ) -> TranscriptionResult:
         raise NotImplementedError("Transcriber must implement the transcribe method.")
     

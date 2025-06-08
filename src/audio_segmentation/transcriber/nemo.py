@@ -214,6 +214,7 @@ class NemoTranscriber(Transcriber):
         self, 
         audio_segment: pydub.AudioSegment,
         word_level_segmentation: bool = True,
+        **kwargs,
      ) -> TranscriptionResult:
         data = np.array(audio_segment.get_array_of_samples())
         data = data.astype(np.float32) / np.iinfo(np.int16).max
