@@ -1,15 +1,10 @@
 import logging
 
-import nltk
-
 from audio_segmentation.segment import RawSegment, Segment
 from audio_segmentation.transcriber.transcriber import TranscriptionResult
 
 
 logger = logging.getLogger(__name__)
-
-
-nltk.download('punkt_tab')  # for sentence tokenization
 
 
 def transform_word(word: str) -> str:
@@ -29,6 +24,9 @@ def sentence_segmenter(
     segmented_transcription: TranscriptionResult,
     exception_if_no_words: bool = True
 ) -> list[Segment]:
+    import nltk
+    nltk.download('punkt_tab', quiet=True)
+
     transcription = segmented_transcription.transcript.strip()
     sentences = nltk.tokenize.sent_tokenize(transcription)
     words: list[RawSegment] = segmented_transcription.segments
