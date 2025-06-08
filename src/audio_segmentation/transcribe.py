@@ -30,6 +30,7 @@ def segment_audio_segment(
     transcriber: Transcriber,
     use_sentence_segmentation: bool = True,
     raise_exception: bool = False, # Only applies if word_level_segmentation is True
+    transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     if use_sentence_segmentation and (not transcriber.supports_word_level_segmentation or not transcriber.includes_punctuation):
         logger.warning(
@@ -46,6 +47,7 @@ def segment_audio_segment(
     result = transcriber.transcribe(
         audio_segment=audio_segment,
         word_level_segmentation=use_sentence_segmentation,
+        **(transcriber_kwargs or {}),
     )
 
     if use_sentence_segmentation:
@@ -67,6 +69,7 @@ def segment_full_audio(
     segment_length: int, # Length in milliseconds
     use_sentence_segmentation: bool = True,
     raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
+    transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     total_length = len(full_audio)
     complete_segments: list[Segment] = []
@@ -89,6 +92,7 @@ def segment_full_audio(
             transcriber=transcriber,
             use_sentence_segmentation=use_sentence_segmentation,
             raise_exception=raise_exception,
+            transcriber_kwargs=transcriber_kwargs or {},
         )
 
         logger.debug(
@@ -138,6 +142,7 @@ def transcribe_audio(
     segment_length: int | None = None,
     use_sentence_segmentation: bool = True,
     raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
+    transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     """
     Transcribe the audio file using the specified transcriber.
@@ -151,13 +156,14 @@ def transcribe_audio(
         use_sentence_segmentation (bool): Whether to perform word-level segmentation.
         raise_exception (bool): If True, raises an exception if no words are found in a segment
             when use_sentence_segmentation is True. Defaults to False.
+        transcriber_kwargs (dict | None): Additional keyword arguments to pass to the transcriber.
 
     Returns:
         list[Segment]: List of segments with transcription results.
     """
     audio = Path(audio)
     segment_length = segment_length or transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
-    
+
     if not audio.exists():
         raise FileNotFoundError(f"Audio file {audio} does not exist.")
     
@@ -177,4 +183,5 @@ def transcribe_audio(
         segment_length=segment_length,
         use_sentence_segmentation=use_sentence_segmentation,
         raise_exception=raise_exception,
+        transcriber_kwargs=transcriber_kwargs,
     )
