@@ -21,3 +21,15 @@ if importlib.util.find_spec("whisperx"):
         WhisperxTranscriber, 
         WhisperxModel,
     )
+
+# Export all classes and functions
+__all__ = [
+    "Segment",
+    "Transcriber",
+    "TranscriptionResult",
+    "transcribe_audio",
+    "NemoTranscriber",
+    "NemoModel",
+    "WhisperxTranscriber",
+    "WhisperxModel",
+]
