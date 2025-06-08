@@ -179,7 +179,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-parakeet = [
+nemo = [
     { name = "cuda-python" },
     { name = "nemo-toolkit", extra = ["asr"] },
 ]
@@ -194,14 +194,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cuda-python", marker = "extra == 'parakeet'", specifier = ">=12.9.0" },
-    { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'parakeet'", specifier = ">=2.2.1" },
+    { name = "cuda-python", marker = "extra == 'nemo'", specifier = ">=12.9.0" },
+    { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'nemo'", specifier = ">=2.2.1" },
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "torch", specifier = ">=2.7.1" },
     { name = "whisperx", marker = "extra == 'whisperx'", git = "https://github.com/jspaulsen/whisperx.git" },
 ]
-provides-extras = ["parakeet", "whisperx"]
+provides-extras = ["nemo", "whisperx"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.4.0" }]

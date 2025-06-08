@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-parakeet = [
+nemo = [
     "cuda-python>=12.9.0",
     "nemo-toolkit[asr]>=2.2.1",
 ]
