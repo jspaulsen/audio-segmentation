@@ -43,9 +43,11 @@ class WhisperxTranscriber(Transcriber):
         model_name: WhisperxModel = WhisperxModel.Large_v3,
         device: str = 'cuda',
         device_index: int | None = None,
+        batch_size: int = 4,
     ) -> None:
         self.model_name = model_name
         self.device = device
+        self.batch_size = batch_size
 
         if device_index is not None:
             self.device = f"{device}:{device_index}"
@@ -76,7 +78,7 @@ class WhisperxTranscriber(Transcriber):
 
     def transcribe(
         self, 
-        audio_segment: pydub.AudioSegment, 
+        audio_segment: pydub.AudioSegment,
         word_level_segmentation: bool = True
     ) -> TranscriptionResult:
         """
@@ -94,7 +96,12 @@ class WhisperxTranscriber(Transcriber):
         key = 'word_segments' if word_level_segmentation else 'segments'
         field = 'word' if word_level_segmentation else 'text'
 
-        transcription_result = self.model.transcribe(data, language='en')
+        transcription_result = self.model.transcribe(
+            data,
+            batch_size=self.batch_size,
+            language='en',
+        )
+        
         aligned = whisperx.align(
             transcription_result['segments'],
             self.aligner,
