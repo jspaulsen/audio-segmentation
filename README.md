@@ -20,6 +20,12 @@ The accuracy of the segmentation depends on the quality of the transcription mod
 
 This library is still in development, undertested and may not work as expected. It also is biased towards the author's use case and may not work well for other audio files. Use at your own risk.
 
+## Versioning
+
+This library _will_ use [Semantic Versioning](https://semver.org/) for versioning.
+
+For now, as the interface is still being developed, the versioning should be considered unstable and subject to change.
+
 ## Installation
 
 To be announced. Should be able to install via uv and git.
@@ -37,9 +43,9 @@ If using Whisperx for transcription, you will also (probably) need:
 Refer to the examples directory for more concrete usage examples.
 
 ```python
-from audio_segmentation import ParakeetTranscriber, ParakeetModel, transcribe_audio
+from audio_segmentation import NemoTranscriber, NemoModel, transcribe_audio
 
-transcriber = ParakeetTranscriber(model_name=ParakeetModel.TDT_V2)
+transcriber = NemoTranscriber(model_name=NemoModel.TDT_V2)
 results = transcribe_audio(
     audio=audio_fpath,
     transcriber=transcriber,
@@ -48,10 +54,9 @@ results = transcribe_audio(
 
 ## Supported Models
 
-### Nemo
-
-- `parakeet-tdt-v2` - Parakeet TDT V2 model
+- `nemo` - Parakeet TDT V2 model via NeMo
 - `whisperx` - WhisperX model (requires additional dependencies)
+- `whisper-timestamped`
 
 
 
