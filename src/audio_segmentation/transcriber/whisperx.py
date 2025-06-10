@@ -39,23 +39,27 @@ class WhisperxTranscriber(Transcriber):
         device: str = 'cuda',
         device_index: int | None = None,
         batch_size: int = 4,
+        compute_type: str = 'float16',
     ) -> None:
         self.model_name = model_name
         self.device = device
+        self.align_device = device
         self.batch_size = batch_size
 
         if device_index is not None:
-            self.device = f"{device}:{device_index}"
+            self.align_device = f"{device}:{device_index}"
 
         self.model: FasterWhisperPipeline = whisperx.load_model(
             self.model_name.value,
             device=device,
+            device_index=device_index,
             language='en',
+            compute_type=compute_type,
         )
 
         aligner, metadata = whisperx.load_align_model(
             language_code='en',
-            device=self.device,
+            device=self.align_device,
         )
 
         self.aligner: Wav2Vec2ForCTC = aligner
