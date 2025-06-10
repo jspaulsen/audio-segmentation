@@ -1,8 +1,4 @@
 from enum import StrEnum
-import io
-import logging
-from pathlib import Path
-from typing import cast
 import warnings
 
 import numpy as np
@@ -11,8 +7,7 @@ from transformers import Wav2Vec2ForCTC
 import whisperx
 from whisperx.asr import FasterWhisperPipeline
 
-from audio_segmentation.segment import RawSegment, Segment
-from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
+from audio_segmentation.segment import RawSegment
 from audio_segmentation.transcriber.transcriber import Transcriber, TranscriptionResult
 
 
@@ -35,11 +30,11 @@ class WhisperxModel(StrEnum):
     DistilSmall_En = 'distill-small.en'
     DistilMedium_En = 'distill-medium.en'
     DistilLarge_v3 = 'distill-large-v3'
-    
+
 
 class WhisperxTranscriber(Transcriber):
     def __init__(
-        self, 
+        self,
         model_name: WhisperxModel = WhisperxModel.Large_v3,
         device: str = 'cuda',
         device_index: int | None = None,
@@ -67,7 +62,7 @@ class WhisperxTranscriber(Transcriber):
         self.metadata: dict = metadata
 
         super().__init__()
-    
+
     @property
     def supports_word_level_segmentation(self) -> bool:
         return True
@@ -77,7 +72,7 @@ class WhisperxTranscriber(Transcriber):
         return True
 
     def transcribe(
-        self, 
+        self,
         audio_segment: pydub.AudioSegment,
         word_level_segmentation: bool = True,
         **kwargs,
@@ -103,7 +98,7 @@ class WhisperxTranscriber(Transcriber):
             language='en',
             **kwargs,
         )
-        
+
         aligned = whisperx.align(
             transcription_result['segments'],
             self.aligner,
@@ -124,7 +119,7 @@ class WhisperxTranscriber(Transcriber):
                     text=raw_segment[field],
                 )
             )
-        
+
         return TranscriptionResult(
             transcript=transcription,
             segments=raw_segments,
