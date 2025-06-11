@@ -1,5 +1,6 @@
 import importlib.util
 
+from audio_segmentation.refine import refine_segment_timestamps
 from audio_segmentation.segment import Segment
 from audio_segmentation.segmenter import SegmentationException
 from audio_segmentation.transcribe import transcribe_audio
@@ -33,6 +34,7 @@ if importlib.util.find_spec("whisper_timestamped"):
 
 # Export all classes and functions
 __all__ = [
+    'refine_segment_timestamps',
     "Segment",
     "SegmentationException",
     "Transcriber",
