@@ -20,7 +20,7 @@ class TestTranscribeAudio:
             transcriber=transcriber,
             use_sentence_segmentation=True,
             segment_length=4 * 60 * 1000,  # 4 minutes in milliseconds
-            raise_exception=True
+            raise_exception_on_mismatch=True
         )
 
         assert result
@@ -34,7 +34,7 @@ class TestTranscribeAudio:
             transcriber=transcriber,
             use_sentence_segmentation=True,
             segment_length=4 * 60 * 1000,  # 4 minutes in milliseconds
-            raise_exception=True
+            raise_exception_on_mismatch=True
         )
 
         assert result
@@ -48,7 +48,7 @@ class TestTranscribeAudio:
             transcriber=transcriber,
             use_sentence_segmentation=True,
             segment_length=4 * 60 * 1000,  # 4 minutes in milliseconds
-            raise_exception=True
+            raise_exception_on_mismatch=True
         )
 
         assert result

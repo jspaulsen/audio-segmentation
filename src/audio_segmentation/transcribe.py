@@ -29,7 +29,7 @@ def segment_audio_segment(
     audio_segment: pydub.AudioSegment,
     transcriber: Transcriber,
     use_sentence_segmentation: bool = True,
-    raise_exception: bool = False, # Only applies if word_level_segmentation is True
+    raise_exception_on_mismatch: bool = False, # Only applies if word_level_segmentation is True
     transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     if use_sentence_segmentation and (not transcriber.supports_word_level_segmentation or not transcriber.includes_punctuation):
@@ -53,14 +53,14 @@ def segment_audio_segment(
     if use_sentence_segmentation:
         return sentence_segmenter(
             segmented_transcription=result,
-            exception_if_no_words=raise_exception,
+            raise_exception_on_mismatch=raise_exception_on_mismatch,
         )
 
     return default_segmenter(segments=result.segments)
 
 
 # TODO: Rename me; this splits the audio into segments of a fixed length
-# and then transcribes each segment; on the chance that the split 
+# and then transcribes each segment; on the chance that the split
 # interrupts a sentence, it will try to fix that by using the n-1 location
 # of the last segment as the end of the segment.
 def segment_full_audio(
@@ -68,7 +68,7 @@ def segment_full_audio(
     transcriber: Transcriber,
     segment_length: int, # Length in milliseconds
     use_sentence_segmentation: bool = True,
-    raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
+    raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
     transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     total_length = len(full_audio)
@@ -86,12 +86,12 @@ def segment_full_audio(
             last_segment = True
 
         audio_segment: pydub.AudioSegment = cast(pydub.AudioSegment, full_audio[start:end])
-        
+
         segments = segment_audio_segment(
             audio_segment=audio_segment,
             transcriber=transcriber,
             use_sentence_segmentation=use_sentence_segmentation,
-            raise_exception=raise_exception,
+            raise_exception_on_mismatch=raise_exception_on_mismatch,
             transcriber_kwargs=transcriber_kwargs or {},
         )
 
@@ -132,7 +132,7 @@ def segment_full_audio(
 
         # Move the start to the end of the last segment
         start = segments[-1].end
-    
+
     return complete_segments
 
 
@@ -141,7 +141,7 @@ def transcribe_audio(
     transcriber: Transcriber,
     segment_length: int | None = None,
     use_sentence_segmentation: bool = True,
-    raise_exception: bool = False,  # Only applies if use_sentence_segmentation is True
+    raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
     transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
     """
@@ -154,7 +154,7 @@ def transcribe_audio(
             NOTE: Unless you have a specific reason to change this, you should leave this as None
                 and let the transcriber decide the ideal segment length.
         use_sentence_segmentation (bool): Whether to perform word-level segmentation.
-        raise_exception (bool): If True, raises an exception if no words are found in a segment
+        raise_exception_on_mismatch (bool): If True, raises an exception if no words are found in a segment
             when use_sentence_segmentation is True. Defaults to False.
         transcriber_kwargs (dict | None): Additional keyword arguments to pass to the transcriber.
 
@@ -166,9 +166,9 @@ def transcribe_audio(
 
     if not audio.exists():
         raise FileNotFoundError(f"Audio file {audio} does not exist.")
-    
+
     audio_segment: pydub.AudioSegment = pydub.AudioSegment.from_file(audio)
-    
+
     # if the file isn't wav, convert it to wav
     if audio.suffix.lower() != ".wav":
         audio_segment = reformat_audio(audio_segment)
@@ -182,6 +182,6 @@ def transcribe_audio(
         transcriber=transcriber,
         segment_length=segment_length,
         use_sentence_segmentation=use_sentence_segmentation,
-        raise_exception=raise_exception,
+        raise_exception_on_mismatch=raise_exception_on_mismatch,
         transcriber_kwargs=transcriber_kwargs,
     )

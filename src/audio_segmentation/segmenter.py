@@ -7,6 +7,19 @@ from audio_segmentation.transcriber.transcriber import TranscriptionResult
 logger = logging.getLogger(__name__)
 
 
+class SegmentationException(Exception):
+    def __init__(
+        self,
+        transcription: TranscriptionResult,
+        message: str = "An exception occurred during segmentation",
+        *args,
+        **kwargs
+    ):
+        super().__init__(message, *args, **kwargs)
+        self.message = message
+        self.transcription = transcription
+
+
 def transform_word(word: str) -> str:
     """
     Transform the word to a standard format
@@ -15,14 +28,22 @@ def transform_word(word: str) -> str:
         word
             .strip("-.,!?\"'")
             .replace("'", " ")
+            .replace('⁇', "")
             .lower()
+            .strip()
     )
 
 
-# def sentence_segmenter(transcription: str, words: list[RawSegment]) -> list[Segment]:
+def transform_sentence(sentence: str) -> str:
+    return (
+        sentence
+            .replace('⁇', "")
+    )
+
+
 def sentence_segmenter(
     segmented_transcription: TranscriptionResult,
-    exception_if_no_words: bool = True
+    raise_exception_on_mismatch: bool = True
 ) -> list[Segment]:
     import nltk
     nltk.download('punkt_tab', quiet=True)
@@ -35,9 +56,8 @@ def sentence_segmenter(
     current_word_index = 0
 
     for sentence in sentences:
-        sentence_words =  sentence.split()
+        sentence_words =  transform_sentence(sentence).split()
 
-        # split any dashed words
         sentence_len = len(sentence_words)
         matched_words = []
 
@@ -96,8 +116,11 @@ def sentence_segmenter(
         else:
             logger.exception(f"No matching words found for sentence: {sentence}")
 
-            if exception_if_no_words:
-                raise ValueError(f"No matching words found for sentence: {sentence}")
+            if raise_exception_on_mismatch:
+                raise SegmentationException(
+                    transcription=segmented_transcription,
+                    message=f"Mismatch in sentence segmentation for: {sentence}"
+                )
 
     return segments
 
@@ -105,7 +128,7 @@ def sentence_segmenter(
 def default_segmenter(segments: list[RawSegment]) -> list[Segment]:
     """
     Default segmenter that returns the segments as they are.
-    
+
     NOTE: This only works for sentence level segments. It does not handle word level segmentation.
     """
     return [
