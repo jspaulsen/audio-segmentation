@@ -5,8 +5,8 @@ import numpy as np
 import pydub
 import whisper_timestamped as whisper
 
-from audio_segmentation.segment import RawSegment
-from audio_segmentation.transcriber.transcriber import Transcriber, TranscriptionResult
+from audio_segmentation.types.segment import RawSegment
+from audio_segmentation.transcriber.transcriber import Transcriber, RawTranscriptionResult
 
 
 class WhisperModel(StrEnum):
@@ -44,7 +44,7 @@ class WhisperTranscriptionResult(TypedDict):
     text: str
 
 
-
+# NOTE: Consider this deprecated.
 class WhisperTimestampedTranscriber(Transcriber):
     def __init__(
         self,
@@ -78,7 +78,7 @@ class WhisperTimestampedTranscriber(Transcriber):
         audio_segment: pydub.AudioSegment,
         word_level_segmentation: bool = True,
         **kwargs,
-    ) -> TranscriptionResult:
+    ) -> RawTranscriptionResult:
         data = np.array(audio_segment.get_array_of_samples())
         data = data.astype(np.float32) / np.iinfo(np.int16).max
 
@@ -106,7 +106,7 @@ class WhisperTimestampedTranscriber(Transcriber):
                 for word in segment['words']
             ]
 
-        return TranscriptionResult(
+        return RawTranscriptionResult(
             segments=[
                 RawSegment(
                     start=segment['start'],

@@ -6,8 +6,8 @@ from nemo.collections.asr.models import EncDecRNNTBPEModel, EncDecMultiTaskModel
 import numpy as np
 import pydub
 
-from audio_segmentation.segment import RawSegment
-from audio_segmentation.transcriber.transcriber import Transcriber, TranscriptionResult
+from audio_segmentation.types.segment import RawSegment
+from audio_segmentation.transcriber.transcriber import Transcriber, RawTranscriptionResult
 
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class NemoTranscribeProtocol(Protocol):
 
 class InternalParakeetTranscriber:
     def __init__(
-        self, 
+        self,
         model_name: NemoModel = NemoModel.PARAKEET_TDT_V2,
         device_index: int | None = None,
         batch_size: int = 1,
@@ -86,12 +86,12 @@ class InternalParakeetTranscriber:
         # asr_model = asr_model.to(torch.float16)
 
     def transcribe(
-        self, 
+        self,
         audio: np.ndarray,
         verbose: bool = False,
     ) -> list[NemoTranscriptResult]:
         return cast(
-            list[NemoTranscriptResult], 
+            list[NemoTranscriptResult],
             self.model.transcribe(
                 audio,
                 timestamps=True,
@@ -121,13 +121,13 @@ class InternalCanaryTranscriber:
         decode_cfg = self.model.cfg.decoding
         decode_cfg.beam.beam_size = 1
         self.model.change_decoding_strategy(decode_cfg)
-    
+
     @property
     def includes_punctuation(self) -> bool:
         return True
 
     def transcribe(
-        self, 
+        self,
         audio: np.ndarray,
         verbose: bool = False,
     ) -> list[NemoTranscriptResult]:
@@ -135,9 +135,9 @@ class InternalCanaryTranscriber:
         Transcribe the audio using the Canary model.
         """
         return cast(
-            list[NemoTranscriptResult], 
+            list[NemoTranscriptResult],
             self.model.transcribe(
-                audio, 
+                audio,
                 timestamps=True,
                 verbose=verbose,
                 batch_size=self.batch_size,
@@ -183,14 +183,14 @@ class NemoTranscriber(Transcriber):
 
             case _:
                 raise ValueError(f"Unsupported model name: {model_name}")
-        
+
         super().__init__()
-        
+
     @property
     def ideal_segment_length(self) -> int | None:
         if self.model_name == NemoModel.PARAKEET_TDT_V2:
             return 60 * 8 * 1000 # 8 minutes in seconds
-        
+
         if self.model_name == NemoModel.CANARY_1B_FLASH:
             return 10 * 1000 # 10 seconds in milliseconds
 
@@ -209,16 +209,17 @@ class NemoTranscriber(Transcriber):
         Returns whether the transcriber includes punctuation in the transcription.
         """
         return self.model.includes_punctuation
-    
+
     def transcribe(
-        self, 
+        self,
         audio_segment: pydub.AudioSegment,
-        word_level_segmentation: bool = True,
+        # word_level_segmentation: bool = True,
         **kwargs,
-     ) -> TranscriptionResult:
+     ) -> RawTranscriptionResult:
         data = np.array(audio_segment.get_array_of_samples())
         data = data.astype(np.float32) / np.iinfo(np.int16).max
-        key = 'word' if word_level_segmentation else 'segment'
+        key = 'word'  # Always use word-level segmentation
+        # key = 'word' if word_level_segmentation else 'segment'
 
         outputs = self.model.transcribe(data, verbose=self.verbose)
         output = outputs[0]
@@ -232,8 +233,8 @@ class NemoTranscriber(Transcriber):
                     text=segment[key], # type: ignore
                 )
             )
-        
-        return TranscriptionResult(
+
+        return RawTranscriptionResult(
             transcript=output.text,
             segments=ret,
         )

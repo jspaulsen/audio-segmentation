@@ -3,11 +3,11 @@ from dataclasses import dataclass
 
 import pydub
 
-from audio_segmentation.segment import RawSegment
+from audio_segmentation.types.segment import RawSegment
 
 
 @dataclass
-class TranscriptionResult:
+class RawTranscriptionResult:
     transcript: str
     """
     Entire transcription of the audio.
@@ -15,24 +15,25 @@ class TranscriptionResult:
 
     segments: list[RawSegment]
     """
-    List of segments with start and end times. These can be 
+    List of segments with start and end times. These can be
     word level or sentence level segments.
     """
 
 
+# TODO: Convert this to a protocol
 class Transcriber(abc.ABC):
     """
     Abstract base class for audio transcribers.
     """
 
     def transcribe(
-        self, 
+        self,
         audio_segment: pydub.AudioSegment,
-        word_level_segmentation: bool = True,
+        # word_level_segmentation: bool = True,
         **kwargs,
-    ) -> TranscriptionResult:
+    ) -> RawTranscriptionResult:
         raise NotImplementedError("Transcriber must implement the transcribe method.")
-    
+
     @property
     def ideal_segment_length(self) -> int | None:
         """
@@ -41,7 +42,7 @@ class Transcriber(abc.ABC):
         for transcription.
         """
         return None
-    
+
     @property
     @abc.abstractmethod
     def supports_word_level_segmentation(self) -> bool:
@@ -49,7 +50,8 @@ class Transcriber(abc.ABC):
         Returns whether the transcriber supports word level segmentation.
         """
         raise NotImplementedError("Transcriber must implement the supports_word_level_segmentation property.")
-    
+
+    # TODO: Deprecate this. Just don't support transcribers that don't include punctuation.
     @property
     @abc.abstractmethod
     def includes_punctuation(self) -> bool:

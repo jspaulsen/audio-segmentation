@@ -1,3 +1,5 @@
-We should look at using Parakeet RNNT 1.1B instead of the 0.6B TDT model for word level transcription: https://developer.nvidia.com/blog/pushing-the-boundaries-of-speech-recognition-with-nemo-parakeet-asr-models/
+https://towardsdatascience.com/text-tiling-done-right-building-solid-foundations-for-your-personal-llm-e70947779ac1/
 
-Additionally: If we're going to continue to use the TDT model, we should reduce the segmentation length to 8 minutes and not use the "Limited Context Attention" option.
+TODO:
+* Should abstract the pydub segment so we can pivot to librosa
+* Support speaker diarization (or at a minimum identify speaker changes)

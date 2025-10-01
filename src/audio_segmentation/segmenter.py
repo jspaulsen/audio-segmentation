@@ -1,7 +1,9 @@
 import logging
 
-from audio_segmentation.segment import RawSegment, Segment
-from audio_segmentation.transcriber.transcriber import TranscriptionResult
+from audio_segmentation.types.segment import RawSegment, Segment
+from audio_segmentation.transcriber.transcriber import RawTranscriptionResult
+
+import nltk
 
 
 logger = logging.getLogger(__name__)
@@ -10,7 +12,7 @@ logger = logging.getLogger(__name__)
 class SegmentationException(Exception):
     def __init__(
         self,
-        transcription: TranscriptionResult,
+        transcription: RawTranscriptionResult,
         message: str = "An exception occurred during segmentation",
         *args,
         **kwargs
@@ -42,12 +44,9 @@ def transform_sentence(sentence: str) -> str:
 
 
 def sentence_segmenter(
-    segmented_transcription: TranscriptionResult,
+    segmented_transcription: RawTranscriptionResult,
     raise_exception_on_mismatch: bool = True
 ) -> list[Segment]:
-    import nltk
-    nltk.download('punkt_tab', quiet=True)
-
     transcription = segmented_transcription.transcript.strip()
     sentences = nltk.tokenize.sent_tokenize(transcription)
     words: list[RawSegment] = segmented_transcription.segments

@@ -5,23 +5,16 @@ from typing import cast
 
 import pydub
 
-from audio_segmentation.segment import Segment
+from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
 from audio_segmentation.transcriber.transcriber import Transcriber
+from audio_segmentation.types.transcription import TranscriptionResult
 
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_SEGMENT_LENGTH_MS = 60 * 60 * 1000  # 1 hour in milliseconds
-
-
-def reformat_audio(audio: pydub.AudioSegment) -> pydub.AudioSegment:
-    in_memory = io.BytesIO()
-    audio.export(in_memory, format="wav")
-
-    in_memory.seek(0)
-    return pydub.AudioSegment.from_file(in_memory, format="wav")
 
 
 # Takes an audio segment and converts it into list[Segment]
@@ -59,38 +52,56 @@ def segment_audio_segment(
     return default_segmenter(segments=result.segments)
 
 
-# TODO: Rename me; this splits the audio into segments of a fixed length
-# and then transcribes each segment; on the chance that the split
-# interrupts a sentence, it will try to fix that by using the n-1 location
-# of the last segment as the end of the segment.
-def segment_full_audio(
-    full_audio: pydub.AudioSegment,
+def transcribe_audio_segment(
+    audio_segment: pydub.AudioSegment,
     transcriber: Transcriber,
-    segment_length: int, # Length in milliseconds
-    use_sentence_segmentation: bool = True,
-    raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
+    # segment_length: int | None = None,
+    raise_exception_on_mismatch: bool = False,
     transcriber_kwargs: dict | None = None,
 ) -> list[Segment]:
-    total_length = len(full_audio)
+    use_sentence_segmentation: bool = transcriber.supports_word_level_segmentation
+    kwargs = transcriber_kwargs or {}
+
+    result = transcriber.transcribe(
+        audio_segment=audio_segment,
+        **kwargs,
+    )
+
+    if use_sentence_segmentation:
+        return sentence_segmenter(
+            segmented_transcription=result,
+            raise_exception_on_mismatch=raise_exception_on_mismatch,
+        )
+
+    return default_segmenter(segments=result.segments)
+
+
+def transcribe_audio(
+    audio: pydub.AudioSegment,
+    transcriber: Transcriber,
+    # segment_length: int | None = None,
+    raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
+    transcriber_kwargs: dict | None = None,
+) -> TranscriptionResult:
+    audio_length = len(audio)
+    segment_length: int = transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
     complete_segments: list[Segment] = []
     last_segment: bool = False
     start: int = 0
 
-    while start < total_length and not last_segment:
+    while start < audio_length and not last_segment:
         end = start + segment_length
 
-        if end >= total_length:
-            end = total_length
+        if end >= audio_length:
+            end = audio_length
 
             # We're at the end of the audio.
             last_segment = True
 
-        audio_segment: pydub.AudioSegment = cast(pydub.AudioSegment, full_audio[start:end])
-
-        segments = segment_audio_segment(
+        audio_segment: pydub.AudioSegment = cast(pydub.AudioSegment, audio[start:end])
+        segments = transcribe_audio_segment(
             audio_segment=audio_segment,
             transcriber=transcriber,
-            use_sentence_segmentation=use_sentence_segmentation,
             raise_exception_on_mismatch=raise_exception_on_mismatch,
             transcriber_kwargs=transcriber_kwargs or {},
         )
@@ -101,7 +112,7 @@ def segment_full_audio(
                 'start': start,
                 'end': end,
                 'segment_length': segment_length,
-                'total_length': total_length,
+                'total_length': audio_length,
                 'num_segments': len(segments),
                 'last_segment': last_segment,
             },
@@ -110,7 +121,7 @@ def segment_full_audio(
         # If, for whatever reason, we don't have any segments, we should just
         # skip this segment and move on to the next one.
         if not segments:
-            if start + segment_length >= len(full_audio):
+            if start + segment_length >= audio_length:
                 break
 
             start = end
@@ -124,7 +135,7 @@ def segment_full_audio(
 
         # If there's more segments to come, we should pop off the last segment
         # as it's likely to be a partial sentence
-        if start + segment_length < len(full_audio) and len(segments) > 1:
+        if start + segment_length < audio_length and len(segments) > 1:
             if not last_segment:
                 segments.pop(-1)
 
@@ -133,55 +144,7 @@ def segment_full_audio(
         # Move the start to the end of the last segment
         start = segments[-1].end
 
-    return complete_segments
-
-
-def transcribe_audio(
-    audio: Path | str,
-    transcriber: Transcriber,
-    segment_length: int | None = None,
-    use_sentence_segmentation: bool = True,
-    raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
-    transcriber_kwargs: dict | None = None,
-) -> list[Segment]:
-    """
-    Transcribe the audio file using the specified transcriber.
-
-    Args:
-        audio (Path | str): Path to the audio file.
-        transcriber (Transcriber): The transcriber to use for transcription.
-        segment_length (int | None): Length of each segment in milliseconds.
-            NOTE: Unless you have a specific reason to change this, you should leave this as None
-                and let the transcriber decide the ideal segment length.
-        use_sentence_segmentation (bool): Whether to perform word-level segmentation.
-        raise_exception_on_mismatch (bool): If True, raises an exception if no words are found in a segment
-            when use_sentence_segmentation is True. Defaults to False.
-        transcriber_kwargs (dict | None): Additional keyword arguments to pass to the transcriber.
-
-    Returns:
-        list[Segment]: List of segments with transcription results.
-    """
-    audio = Path(audio)
-    segment_length = segment_length or transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
-
-    if not audio.exists():
-        raise FileNotFoundError(f"Audio file {audio} does not exist.")
-
-    audio_segment: pydub.AudioSegment = pydub.AudioSegment.from_file(audio)
-
-    # if the file isn't wav, convert it to wav
-    if audio.suffix.lower() != ".wav":
-        audio_segment = reformat_audio(audio_segment)
-
-    audio_segment: pydub.AudioSegment = audio_segment.set_frame_rate(16000)
-    audio_segment: pydub.AudioSegment = audio_segment.set_channels(1)
-    audio_segment: pydub.AudioSegment = audio_segment.set_sample_width(2)
-
-    return segment_full_audio(
-        full_audio=audio_segment,
-        transcriber=transcriber,
-        segment_length=segment_length,
-        use_sentence_segmentation=use_sentence_segmentation,
-        raise_exception_on_mismatch=raise_exception_on_mismatch,
-        transcriber_kwargs=transcriber_kwargs,
+    return TranscriptionResult(
+        transcript=" ".join([segment.text for segment in complete_segments]),
+        segments=complete_segments,
     )

@@ -1,7 +1,7 @@
 import pydub
 from pydub.silence import detect_silence
 
-from audio_segmentation.segment import Segment
+from audio_segmentation.types.segment import Segment
 
 
 def refine_start(
@@ -82,3 +82,48 @@ def refine_segment_timestamps(
     )
 
     return Segment(start=start, end=end, text=segment.text)
+
+
+def refine_sentence_segments(
+    segments: list[Segment],
+    merge_threshold_ms: int = 500,
+    max_segment_length_ms: int | None = None,
+) -> list[Segment]:
+    """
+    Refines a list of sentence segments by merging segments that are close together.
+
+    Args:
+        segments (list[Segment]): List of segments to refine.
+        merge_threshold_ms (int): Maximum gap in milliseconds between segments to consider merging.
+        max_segment_length_ms (int | None): Optional maximum length for a segment. If merging
+            two segments would exceed this length, they will not be merged.
+
+    Returns:
+        list[Segment]: Refined list of segments.
+    """
+    if not segments:
+        return []
+
+    current_segment: Segment | None = None
+    refined_segments: list[Segment] = []
+
+    for segment in segments:
+        if current_segment is None:
+            current_segment = segment
+            continue
+
+        gap = segment.start - current_segment.end
+
+        # If the gap is larger than the merge threshold, or if merging would exceed max length, finalize current segment
+        if gap > merge_threshold_ms or (max_segment_length_ms is not None and current_segment.duration + segment.duration > max_segment_length_ms):
+            refined_segments.append(current_segment)
+            current_segment = segment
+            continue
+
+        # Otherwise, merge the segments
+        current_segment = current_segment.combine(segment)
+
+    if current_segment is not None:
+        refined_segments.append(current_segment)
+
+    return refined_segments

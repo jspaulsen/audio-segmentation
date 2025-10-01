@@ -7,8 +7,8 @@ from transformers import Wav2Vec2ForCTC
 import whisperx
 from whisperx.asr import FasterWhisperPipeline
 
-from audio_segmentation.segment import RawSegment
-from audio_segmentation.transcriber.transcriber import Transcriber, TranscriptionResult
+from audio_segmentation.types.segment import RawSegment
+from audio_segmentation.transcriber.transcriber import Transcriber, RawTranscriptionResult
 
 
 warnings.filterwarnings("ignore", module="pyannote")
@@ -78,9 +78,9 @@ class WhisperxTranscriber(Transcriber):
     def transcribe(
         self,
         audio_segment: pydub.AudioSegment,
-        word_level_segmentation: bool = True,
+        # word_level_segmentation: bool = True,
         **kwargs,
-    ) -> TranscriptionResult:
+    ) -> RawTranscriptionResult:
         """
         Transcribes the given audio segment using WhisperX.
 
@@ -93,8 +93,13 @@ class WhisperxTranscriber(Transcriber):
         """
         data = np.array(audio_segment.get_array_of_samples())
         data = data.astype(np.float32) / np.iinfo(np.int16).max
-        key = 'word_segments' if word_level_segmentation else 'segments'
-        field = 'word' if word_level_segmentation else 'text'
+
+        # Always use word-level segmentation
+        key = 'word_segments'
+        field = 'word'
+        
+        # key = 'word_segments' if word_level_segmentation else 'segments'
+        # field = 'word' if word_level_segmentation else 'text'
 
         transcription_result = self.model.transcribe(
             data,
@@ -124,7 +129,7 @@ class WhisperxTranscriber(Transcriber):
                 )
             )
 
-        return TranscriptionResult(
+        return RawTranscriptionResult(
             transcript=transcription,
             segments=raw_segments,
         )
