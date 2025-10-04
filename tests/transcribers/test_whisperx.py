@@ -6,7 +6,7 @@ from audio_segmentation.transcriber.whisperx import WhisperxModel, WhisperxTrans
 class TestWhisperxTranscriber:
     def test_transcribe_ten_minute_segment(self, ten_minute_segment: pydub.AudioSegment):
         transcriber = WhisperxTranscriber(model_name=WhisperxModel.Tiny)
-        results = transcriber.transcribe(ten_minute_segment, word_level_segmentation=True)
+        results = transcriber.transcribe(ten_minute_segment)
 
         del transcriber
 

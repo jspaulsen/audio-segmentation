@@ -37,7 +37,7 @@ class WhisperxTranscriber(Transcriber):
         self,
         model_name: WhisperxModel = WhisperxModel.Large_v3,
         device: str = 'cuda',
-        device_index: int | None = None,
+        device_index: int = 0,
         batch_size: int = 4,
         compute_type: str = 'float16',
     ) -> None:
@@ -97,7 +97,7 @@ class WhisperxTranscriber(Transcriber):
         # Always use word-level segmentation
         key = 'word_segments'
         field = 'word'
-        
+
         # key = 'word_segments' if word_level_segmentation else 'segments'
         # field = 'word' if word_level_segmentation else 'text'
 

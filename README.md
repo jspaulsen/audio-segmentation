@@ -56,7 +56,6 @@ results = transcribe_audio(
 
 - `nemo` - Parakeet TDT V2 model via NeMo
 - `whisperx` - WhisperX model (requires additional dependencies)
-- `whisper-timestamped`
 
 
 

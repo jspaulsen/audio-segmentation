@@ -28,13 +28,6 @@ if importlib.util.find_spec("whisperx"):
     )
 
 
-# NOTE: Deprecated
-if importlib.util.find_spec("whisper_timestamped"):
-    from audio_segmentation.transcriber.whisper_timestamped import (
-        WhisperModel,
-        WhisperTimestampedTranscriber,
-    )
-
 
 # Export all classes and functions
 __all__ = [
@@ -48,8 +41,6 @@ __all__ = [
     "SegmentationException",
     "transcribe_audio",
     "Transcriber",
-    "WhisperModel",
-    "WhisperTimestampedTranscriber",
     "WhisperxModel",
     "WhisperxTranscriber",
 ]

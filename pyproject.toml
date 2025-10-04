@@ -1,6 +1,6 @@
 [project]
 name = "audio-segmentation"
-version = "0.3.0"
+version = "0.4.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,9 +27,7 @@ nemo = [
 whisperx = [
     "whisperx",
 ]
-whisper-timestamped = [
-    "whisper-timestamped>=1.15.8",
-]
+
 
 [build-system]
 requires = ["hatchling"]
@@ -41,10 +39,10 @@ dev = [
 ]
 
 [tool.uv.sources]
-whisperx = { git = "https://github.com/jspaulsen/whisperx.git" }
 torch = [
   { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchaudio = [
   { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
+whisperx = { git = "https://github.com/jspaulsen/whisperx.git" }
