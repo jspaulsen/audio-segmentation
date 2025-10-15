@@ -1,6 +1,8 @@
 from pathlib import Path
-import pydub
+import numpy as np
 import pytest
+
+from audio_segmentation.utility import load_audio
 
 
 @pytest.fixture
@@ -9,18 +11,9 @@ def ten_minute_segment_path() -> Path:
 
 
 @pytest.fixture
-def ten_minute_segment(ten_minute_segment_path) -> pydub.AudioSegment:
+def ten_minute_segment(ten_minute_segment_path) -> tuple[np.ndarray, int]:
     """
     Fixture that provides a 10-minute audio segment.
     This is used to test the transcriber with a longer audio segment.
     """
-    audio = pydub.AudioSegment.from_file(
-        ten_minute_segment_path,
-        format='wav',
-    )
-
-    audio = audio.set_frame_rate(16000)  # Set to 16kHz
-    audio = audio.set_channels(1)
-    audio = audio.set_sample_width(2)
-
-    return audio
+    return load_audio(ten_minute_segment_path, sr=16000, mono=True)

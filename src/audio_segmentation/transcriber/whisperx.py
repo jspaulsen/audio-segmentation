@@ -2,7 +2,6 @@ from enum import StrEnum
 import warnings
 
 import numpy as np
-import pydub
 from transformers import Wav2Vec2ForCTC
 import whisperx
 from whisperx.asr import FasterWhisperPipeline
@@ -72,12 +71,17 @@ class WhisperxTranscriber(Transcriber):
         return True
 
     @property
-    def includes_punctuation(self) -> bool:
+    def required_sample_rate(self) -> int:
+        return 16000
+
+    @property
+    def requires_mono_audio(self) -> bool:
         return True
 
     def transcribe(
         self,
-        audio_segment: pydub.AudioSegment,
+        audio: np.ndarray,
+        sr: int,
         # word_level_segmentation: bool = True,
         **kwargs,
     ) -> RawTranscriptionResult:
@@ -91,18 +95,14 @@ class WhisperxTranscriber(Transcriber):
         Returns:
             list[Segment]: A list of segments containing the transcription.
         """
-        data = np.array(audio_segment.get_array_of_samples())
-        data = data.astype(np.float32) / np.iinfo(np.int16).max
-
-        # Always use word-level segmentation
-        key = 'word_segments'
+        key = 'word_segments'  # Always use word-level segmentation
         field = 'word'
 
         # key = 'word_segments' if word_level_segmentation else 'segments'
         # field = 'word' if word_level_segmentation else 'text'
 
         transcription_result = self.model.transcribe(
-            data,
+            audio,
             batch_size=self.batch_size,
             language='en',
             **kwargs,
@@ -112,7 +112,7 @@ class WhisperxTranscriber(Transcriber):
             transcription_result['segments'],
             self.aligner,
             self.metadata,
-            data,
+            audio,
             device=self.device,
         )
 

@@ -176,11 +176,11 @@ wheels = [
 
 [[package]]
 name = "audio-segmentation"
-version = "0.3.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
+    { name = "librosa" },
     { name = "nltk" },
-    { name = "pydub" },
     { name = "sentence-transformers" },
     { name = "torch", version = "2.7.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
     { name = "torch", version = "2.7.1+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
@@ -206,9 +206,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cuda-python", marker = "extra == 'nemo'", specifier = ">=12.9.0" },
+    { name = "librosa", specifier = ">=0.11.0" },
     { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'nemo'", specifier = ">=2.2.1" },
     { name = "nltk", specifier = ">=3.9.1" },
-    { name = "pydub", specifier = ">=0.25.1" },
     { name = "sentence-transformers", specifier = ">=5.1.1" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.7.1" },
     { name = "torch", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=2.7.1", index = "https://download.pytorch.org/whl/cu128" },

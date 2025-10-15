@@ -58,7 +58,12 @@ results = transcribe_audio(
 - `whisperx` - WhisperX model (requires additional dependencies)
 
 
-
 ## Known (Potential) Issues
 
 - Optional dependencies aren't handled correctly and imports may fail if the optional dependencies are not installed.
+
+## Development
+
+```bash
+uv sync --all-extras
+```

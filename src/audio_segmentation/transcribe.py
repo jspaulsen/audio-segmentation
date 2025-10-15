@@ -1,14 +1,13 @@
-import io
 import logging
-from pathlib import Path
 from typing import cast
 
-import pydub
+import numpy as np
 
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
 from audio_segmentation.transcriber.transcriber import Transcriber
 from audio_segmentation.types.transcription import TranscriptionResult
+from audio_segmentation.utility import resample, convert_to_mono
 
 
 logger = logging.getLogger(__name__)
@@ -17,43 +16,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_SEGMENT_LENGTH_MS = 60 * 60 * 1000  # 1 hour in milliseconds
 
 
-# Takes an audio segment and converts it into list[Segment]
-def segment_audio_segment(
-    audio_segment: pydub.AudioSegment,
-    transcriber: Transcriber,
-    use_sentence_segmentation: bool = True,
-    raise_exception_on_mismatch: bool = False, # Only applies if word_level_segmentation is True
-    transcriber_kwargs: dict | None = None,
-) -> list[Segment]:
-    if use_sentence_segmentation and (not transcriber.supports_word_level_segmentation or not transcriber.includes_punctuation):
-        logger.warning(
-            "Transcriber does not support word-level segmentation or punctuation; using the default segmenter instead.",
-            extra={
-                'transcriber': transcriber.__class__.__name__,
-                'supports_word_level_segmentation': transcriber.supports_word_level_segmentation,
-                'includes_punctuation': transcriber.includes_punctuation,
-            },
-        )
-
-        use_sentence_segmentation = False
-
-    result = transcriber.transcribe(
-        audio_segment=audio_segment,
-        word_level_segmentation=use_sentence_segmentation,
-        **(transcriber_kwargs or {}),
-    )
-
-    if use_sentence_segmentation:
-        return sentence_segmenter(
-            segmented_transcription=result,
-            raise_exception_on_mismatch=raise_exception_on_mismatch,
-        )
-
-    return default_segmenter(segments=result.segments)
-
-
 def transcribe_audio_segment(
-    audio_segment: pydub.AudioSegment,
+    audio: np.ndarray,
+    sr: int,
     transcriber: Transcriber,
     # segment_length: int | None = None,
     raise_exception_on_mismatch: bool = False,
@@ -63,7 +28,8 @@ def transcribe_audio_segment(
     kwargs = transcriber_kwargs or {}
 
     result = transcriber.transcribe(
-        audio_segment=audio_segment,
+        audio=audio,
+        sr=sr,
         **kwargs,
     )
 
@@ -77,13 +43,14 @@ def transcribe_audio_segment(
 
 
 def transcribe_audio(
-    audio: pydub.AudioSegment,
+    audio: np.ndarray,
+    sr: int,
     transcriber: Transcriber,
     # segment_length: int | None = None,
     raise_exception_on_mismatch: bool = False,  # Only applies if use_sentence_segmentation is True
     transcriber_kwargs: dict | None = None,
 ) -> TranscriptionResult:
-    audio_length = len(audio)
+    audio_length = len(audio) * 1000 // sr  # in milliseconds
     segment_length: int = transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
     complete_segments: list[Segment] = []
     last_segment: bool = False
@@ -98,9 +65,25 @@ def transcribe_audio(
             # We're at the end of the audio.
             last_segment = True
 
-        audio_segment: pydub.AudioSegment = cast(pydub.AudioSegment, audio[start:end])
+        adjusted_start = int(start * sr / 1000)
+        adjusted_end = int(end * sr / 1000)
+        audio_segment = audio[adjusted_start:adjusted_end]
+
+        # if the segment sample_rate does not match that of the transcriber, we need to resample it
+        if transcriber.required_sample_rate and sr != transcriber.required_sample_rate:
+            audio_segment = resample(
+                audio_segment,
+                original_sr=sr,
+                target_sr=transcriber.required_sample_rate,
+            )
+
+        # if the transcriber requires mono audio, we need to convert it
+        if transcriber.requires_mono_audio:
+            audio_segment = convert_to_mono(audio_segment)
+
         segments = transcribe_audio_segment(
-            audio_segment=audio_segment,
+            audio=audio_segment,
+            sr=transcriber.required_sample_rate or sr,
             transcriber=transcriber,
             raise_exception_on_mismatch=raise_exception_on_mismatch,
             transcriber_kwargs=transcriber_kwargs or {},
