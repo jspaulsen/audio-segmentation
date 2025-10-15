@@ -17,3 +17,18 @@ def ten_minute_segment(ten_minute_segment_path) -> tuple[np.ndarray, int]:
     This is used to test the transcriber with a longer audio segment.
     """
     return load_audio(ten_minute_segment_path, sr=16000, mono=True)
+
+
+@pytest.fixture
+def glimpsed_14_path() -> Path:
+    return Path('tests/fixtures/glimpsed_14.wav')
+
+
+@pytest.fixture
+def glimpsed_45_path() -> Path:
+    return Path('tests/fixtures/glimpsed_45.wav')
+
+
+@pytest.fixture
+def five_second_segment_path() -> Path:
+    return Path('tests/fixtures/5s_segment.wav')

@@ -27,6 +27,9 @@ nemo = [
 whisperx = [
     "whisperx",
 ]
+diarization = [
+    "speechbrain>=1.0.3",
+]
 
 
 [build-system]

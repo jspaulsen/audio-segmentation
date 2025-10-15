@@ -190,6 +190,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+diarization = [
+    { name = "speechbrain" },
+]
 nemo = [
     { name = "cuda-python" },
     { name = "nemo-toolkit", extra = ["asr"] },
@@ -210,13 +213,14 @@ requires-dist = [
     { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'nemo'", specifier = ">=2.2.1" },
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "sentence-transformers", specifier = ">=5.1.1" },
+    { name = "speechbrain", marker = "extra == 'diarization'", specifier = ">=1.0.3" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.7.1" },
     { name = "torch", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=2.7.1", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.7.1" },
     { name = "torchaudio", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=2.7.1", index = "https://download.pytorch.org/whl/cu128" },
     { name = "whisperx", marker = "extra == 'whisperx'", git = "https://github.com/jspaulsen/whisperx.git" },
 ]
-provides-extras = ["nemo", "whisperx"]
+provides-extras = ["nemo", "whisperx", "diarization"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.4.0" }]
