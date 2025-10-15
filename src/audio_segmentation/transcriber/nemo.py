@@ -197,6 +197,14 @@ class NemoTranscriber(Transcriber):
         return None
 
     @property
+    def requires_mono_audio(self) -> bool:
+        return True
+
+    @property
+    def required_sample_rate(self) -> int | None:
+        return 16000
+
+    @property
     def supports_word_level_segmentation(self) -> bool:
         """
         Returns whether the transcriber supports word level segmentation.
@@ -212,16 +220,14 @@ class NemoTranscriber(Transcriber):
 
     def transcribe(
         self,
-        audio_segment: pydub.AudioSegment,
-        # word_level_segmentation: bool = True,
+        audio: np.ndarray,
+        sr: int,
         **kwargs,
      ) -> RawTranscriptionResult:
-        data = np.array(audio_segment.get_array_of_samples())
-        data = data.astype(np.float32) / np.iinfo(np.int16).max
         key = 'word'  # Always use word-level segmentation
         # key = 'word' if word_level_segmentation else 'segment'
 
-        outputs = self.model.transcribe(data, verbose=self.verbose)
+        outputs = self.model.transcribe(audio, verbose=self.verbose)
         output = outputs[0]
         ret = []
 
