@@ -2,7 +2,6 @@ from enum import StrEnum
 import warnings
 
 import numpy as np
-import pydub
 from transformers import Wav2Vec2ForCTC
 import whisperx
 from whisperx.asr import FasterWhisperPipeline
