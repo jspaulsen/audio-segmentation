@@ -54,10 +54,6 @@ class NemoTranscribeProtocol(Protocol):
     ) -> list[NemoTranscriptResult]:
         ...
 
-    @property
-    def includes_punctuation(self) -> bool:
-        ...
-
 
 class InternalParakeetTranscriber:
     def __init__(
@@ -72,8 +68,6 @@ class InternalParakeetTranscriber:
             model_name=model_name.value,
             map_location=f"cuda:{device_index}" if device_index is not None else None,  # type: ignore
         )
-
-        self.includes_punctuation = True
 
         # NOTE: parakeet-tdt-v2
         # I think the accuracy is lower (I forget the details) when using this method:
@@ -121,10 +115,6 @@ class InternalCanaryTranscriber:
         decode_cfg = self.model.cfg.decoding
         decode_cfg.beam.beam_size = 1
         self.model.change_decoding_strategy(decode_cfg)
-
-    @property
-    def includes_punctuation(self) -> bool:
-        return True
 
     def transcribe(
         self,
@@ -210,13 +200,6 @@ class NemoTranscriber(Transcriber):
         Returns whether the transcriber supports word level segmentation.
         """
         return True
-
-    @property
-    def includes_punctuation(self) -> bool:
-        """
-        Returns whether the transcriber includes punctuation in the transcription.
-        """
-        return self.model.includes_punctuation
 
     def transcribe(
         self,

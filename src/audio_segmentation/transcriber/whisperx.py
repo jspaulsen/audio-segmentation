@@ -71,10 +71,6 @@ class WhisperxTranscriber(Transcriber):
         return True
 
     @property
-    def includes_punctuation(self) -> bool:
-        return True
-
-    @property
     def required_sample_rate(self) -> int:
         return 16000
 
