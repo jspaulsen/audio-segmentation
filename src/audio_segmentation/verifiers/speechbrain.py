@@ -48,18 +48,3 @@ class SpeechBrainVerifier(SpeakerVerifier):
                 .encode_batch(audio)  # encode_batch expects [B, T]
                 .squeeze(0)
         )
-
-    def compute_similarity(
-        self,
-        first: Tensor,
-        second: Tensor,
-        threshold: float = 0.25,
-    ) -> tuple[float, bool]:
-        score: float = (
-            self
-                .model
-                .similarity(first, second)
-                .item()
-        )
-
-        return score, score > threshold

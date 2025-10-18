@@ -1,4 +1,5 @@
 from pathlib import Path
+import torch
 
 from audio_segmentation.verifiers.speechbrain import SpeechBrainVerifier
 from audio_segmentation.utility import load_audio
@@ -25,11 +26,13 @@ class TestSpeechBrainVerifier:
         embedding_45 = verifier.create_embedding(audio_45)
 
         # Compute similarity
-        score, is_same_speaker = verifier.compute_similarity(embedding_14, embedding_45)
+        similarity= torch.nn.functional.cosine_similarity(
+            embedding_14,
+            embedding_45,
+        ).item()
 
         # Assert that the speakers are identified as the same
-        assert is_same_speaker, f"Expected same speaker but got similarity score: {score}"
-        assert score > 0.25, f"Expected similarity score > 0.25 but got {score}"
+        assert similarity > 0.25, f"Expected similarity score > 0.25 but got {similarity}"
 
     def test_verify_different_speakers(
         self,
@@ -51,8 +54,10 @@ class TestSpeechBrainVerifier:
         embedding_5s = verifier.create_embedding(audio_5s)
 
         # Compute similarity
-        score, is_same_speaker = verifier.compute_similarity(embedding_glimpsed, embedding_5s)
+        similarity= torch.nn.functional.cosine_similarity(
+            embedding_glimpsed,
+            embedding_5s,
+        ).item()
 
         # Assert that the speakers are identified as different
-        assert not is_same_speaker, f"Expected different speakers but got similarity score: {score}"
-        assert score <= 0.25, f"Expected similarity score <= 0.25 but got {score}"
+        assert similarity < 0.25, f"Expected similarity score < 0.25 but got {similarity}"

@@ -207,7 +207,8 @@ class NemoTranscriber(Transcriber):
         sr: int,
         **kwargs,
      ) -> RawTranscriptionResult:
-        key = 'word'  # Always use word-level segmentation
+        key = 'segment'
+        # key = 'word'
         # key = 'word' if word_level_segmentation else 'segment'
 
         outputs = self.model.transcribe(audio, verbose=self.verbose)

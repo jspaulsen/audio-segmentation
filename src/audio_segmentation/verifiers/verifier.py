@@ -17,11 +17,3 @@ class SpeakerVerifier(Protocol):
         audio: np.ndarray | Tensor,
     ) -> Tensor:
         ...
-
-    def compute_similarity(
-        self,
-        first: Tensor,
-        second: Tensor,
-        threshold: float = 0.25,
-    ) -> tuple[float, bool]:
-        ...

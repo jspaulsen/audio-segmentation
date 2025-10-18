@@ -43,13 +43,18 @@ def transform_sentence(sentence: str) -> str:
     )
 
 
+# TODO:
+# With the introduction of multi-speaker support, we need to rethink how sentence segmentation
+# works. The current implementation assumes a single speaker and matches words to sentences
+# sequentially.
+# This won't work well if there are multiple speakers in the transcription.
 def sentence_segmenter(
-    segmented_transcription: RawTranscriptionResult,
+    raw_transcription: RawTranscriptionResult,
     raise_exception_on_mismatch: bool = True
 ) -> list[Segment]:
-    transcription = segmented_transcription.transcript.strip()
+    transcription = raw_transcription.transcript.strip()
     sentences = nltk.tokenize.sent_tokenize(transcription)
-    words: list[RawSegment] = segmented_transcription.segments
+    words: list[RawSegment] = raw_transcription.segments
     segments: list[Segment] = []
 
     current_word_index = 0
@@ -109,7 +114,10 @@ def sentence_segmenter(
                 Segment(
                     start=int(start_time * 1000),  # Convert to milliseconds
                     end=int(end_time * 1000),  # Convert to milliseconds
-                    text=sentence
+                    text=sentence,
+
+                    # TODO: This assumes all words in the sentence are from the same speaker
+                    speaker_id=starting_word.speaker_id
                 )
             )
         else:
@@ -117,7 +125,7 @@ def sentence_segmenter(
 
             if raise_exception_on_mismatch:
                 raise SegmentationException(
-                    transcription=segmented_transcription,
+                    transcription=raw_transcription,
                     message=f"Mismatch in sentence segmentation for: {sentence}"
                 )
 
@@ -134,6 +142,7 @@ def default_segmenter(segments: list[RawSegment]) -> list[Segment]:
         Segment(
             start=int(segment.start * 1000),  # Convert to milliseconds
             end=int(segment.end * 1000),  # Convert to milliseconds
-            text=segment.text
+            text=segment.text,
+            speaker_id=segment.speaker_id
         ) for segment in segments if segment.start is not None and segment.end is not None
     ]
