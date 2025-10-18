@@ -95,11 +95,11 @@ class WhisperxTranscriber(Transcriber):
         Returns:
             list[Segment]: A list of segments containing the transcription.
         """
-        key = 'word_segments'  # Always use word-level segmentation
-        field = 'word'
+        # key = 'word_segments' if word_level_segmentation else 'segments'
+        key = 'segments'
 
         # key = 'word_segments' if word_level_segmentation else 'segments'
-        # field = 'word' if word_level_segmentation else 'text'
+        field = 'word' if key == 'word_segments' else 'text'
 
         transcription_result = self.model.transcribe(
             audio,

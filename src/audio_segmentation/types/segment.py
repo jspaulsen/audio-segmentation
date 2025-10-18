@@ -16,6 +16,14 @@ class Segment:
     """
 
     text: str
+    """
+    Transcribed text for this segment
+    """
+
+    speaker_id: int | None = None
+    """
+    Optional speaker ID for this segment
+    """
 
     @property
     def duration(self) -> int:
@@ -23,7 +31,6 @@ class Segment:
         Duration in milliseconds
         """
         return self.end - self.start
-
 
     def combine(self, other: Segment) -> Segment:
         """

@@ -1,6 +1,6 @@
 [project]
 name = "audio-segmentation"
-version = "0.5.0"
+version = "0.6.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -26,6 +26,9 @@ nemo = [
 ]
 whisperx = [
     "whisperx",
+]
+diarization = [
+    "speechbrain>=1.0.3",
 ]
 
 

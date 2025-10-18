@@ -16,4 +16,4 @@ class TestAudio:
 
         # get a slice of the audio
         segment = audio[1000:2000]
-        assert len(segment) == 16000  # 1 second of audio at 16kHz
+        assert len(segment.data) == 16000  # 1 second of audio at 16kHz

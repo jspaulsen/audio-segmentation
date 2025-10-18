@@ -9,8 +9,8 @@ from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import SegmentationException
 from audio_segmentation.transcribe import transcribe_audio
 from audio_segmentation.transcriber.transcriber import Transcriber
-
 from audio_segmentation.utility import load_audio
+from audio_segmentation.verifiers.verifier import SpeakerVerifier
 
 
 # Only import transcribers if their respective libraries are available
@@ -28,6 +28,9 @@ if importlib.util.find_spec("whisperx"):
     )
 
 
+if importlib.util.find_spec("speechbrain"):
+    from audio_segmentation.verifiers.speechbrain import SpeechBrainVerifier
+
 
 # Export all classes and functions
 __all__ = [
@@ -39,6 +42,8 @@ __all__ = [
     # "refine_sentence_segments",
     "Segment",
     "SegmentationException",
+    "SpeakerVerifier",
+    "SpeechBrainVerifier",
     "transcribe_audio",
     "Transcriber",
     "WhisperxModel",
