@@ -25,7 +25,7 @@ class SpeakerProfile:
     ) -> None:
         self.speaker_id = speaker_id
         self.centroid: Tensor = centroid
-        self.count: int = 0
+        self.count: int = 1
         self.similarity_fn = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
 
     def add_embedding(self, embedding: Tensor):

@@ -12,10 +12,11 @@ class SpeechBrainVerifier(SpeakerVerifier):
     ) -> None:
         self.sample_rate = 16000  # SpeechBrain model requires 16kHz audio
 
-        # TODO: This is not respecting the device_index properly
         model: SpeakerRecognition | None = SpeakerRecognition.from_hparams(
             source="speechbrain/spkrec-ecapa-voxceleb",
-            run_opts={"device_index": device_index} if device_index is not None else {},
+
+            # TODO: This is not respecting the device_index properly
+            run_opts={"device_index": f"cuda:{device_index}"} if device_index is not None else None,
         )
 
         if not model:

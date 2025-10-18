@@ -8,7 +8,6 @@ from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
 from audio_segmentation.transcriber.transcriber import Transcriber
 from audio_segmentation.types.transcription import TranscriptionResult
-from audio_segmentation.utility import resample, convert_to_mono
 from audio_segmentation.verifiers.speaker import SpeakerIdentifier
 from audio_segmentation.verifiers.verifier import SpeakerVerifier
 
@@ -19,64 +18,16 @@ logger = logging.getLogger(__name__)
 DEFAULT_SEGMENT_LENGTH_MS = 60 * 60 * 1000  # 1 hour in milliseconds
 
 
-
-# TODO: If we get rid of this (or just return the raw transcription result instead),
-# We can move the speaker profile logic stuff out of this file.
-# The nltk functionality can be moved out and callers can choose to use it or not,
-# depending on their needs.
-def transcribe_audio_segment(
-    audio: np.ndarray,
-    sr: int,
-    transcriber: Transcriber,
-    identifier: SpeakerIdentifier | None = None,
-    raise_exception_on_mismatch: bool = False,
-    transcriber_kwargs: dict | None = None,
-) -> list[Segment]:
-    use_sentence_segmentation: bool = transcriber.supports_word_level_segmentation
-    kwargs = transcriber_kwargs or {}
-
-    result = transcriber.transcribe(
-        audio=audio,
-        sr=sr,
-        **kwargs,
-    )
-
-    # If we're providing a speaker identifier, we need to identify the speaker for each segment
-    if identifier:
-        for segment in result.segments:
-            if segment.start is None or segment.end is None:
-                continue
-
-            start_sample = int(segment.start * sr)
-            end_sample = int(segment.end * sr)
-            segment_audio = audio[start_sample:end_sample]
-
-            speaker_id = identifier.identify_or_register_speaker(
-                audio=segment_audio,
-                sr=sr,
-            )
-
-            # segment.speaker_id = speaker_id
-
-    if use_sentence_segmentation:
-        return sentence_segmenter(
-            raw_transcription=result,
-            raise_exception_on_mismatch=raise_exception_on_mismatch,
-        )
-
-    return default_segmenter(segments=result.segments)
-
-
 def transcribe_audio(
     audio: np.ndarray,
     sr: int,
     transcriber: Transcriber,
     speaker_verifier: SpeakerVerifier | None = None,
+    similarity_threshold: float = 0.25,
     transcriber_kwargs: dict | None = None,
 ) -> TranscriptionResult:
     naudio = Audio(data=audio, sr=sr)
     audio_length = len(naudio)  # in milliseconds
-    # audio_length = len(audio) * 1000 // sr  # in milliseconds
     segment_length: int = transcriber.ideal_segment_length or DEFAULT_SEGMENT_LENGTH_MS
     complete_segments: list[Segment] = []
     last_segment: bool = False
@@ -86,7 +37,10 @@ def transcribe_audio(
     speaker_identifier: SpeakerIdentifier | None = None
 
     if speaker_verifier:
-        speaker_identifier = SpeakerIdentifier(verifier=speaker_verifier)
+        speaker_identifier = SpeakerIdentifier(
+            verifier=speaker_verifier,
+            similarity_threshold=similarity_threshold,
+        )
 
     # Segment the whole audio into chunks of segment_length and transcribe each chunk.
     while start < audio_length and not last_segment:
@@ -155,12 +109,8 @@ def transcribe_audio(
 
             # If a speaker identifier is provided, identify the speaker for this segment
             if speaker_identifier:
-                sample_start = int(segment.start * sr)
-                sample_end = int(segment.end * sr)
-                segment_audio = naudio[sample_start:sample_end]
-
                 speaker_id = speaker_identifier.identify_or_register_speaker(
-                    audio=segment_audio.to_numpy(),
+                    audio=naudio[nsegment.start:nsegment.end].to_numpy(),
                     sr=sr,
                 )
 

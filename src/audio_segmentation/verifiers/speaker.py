@@ -15,7 +15,7 @@ class SpeakerIdentifier:
     def __init__(
         self,
         verifier: SpeakerVerifier,
-        similarity_threshold: float = 0.60,
+        similarity_threshold: float,
     ) -> None:
         """
         Initialize the SpeakerIdentifier.
@@ -53,7 +53,7 @@ class SpeakerIdentifier:
     def identify_or_register_speaker(
         self,
         audio: np.ndarray,
-        sr: int
+        sr: int,
     ) -> int | None:
         """
         Identify an existing speaker or register a new one based on audio.

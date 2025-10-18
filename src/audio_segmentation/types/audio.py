@@ -10,9 +10,6 @@ class Audio:
         self.sr = sr
     
     def resample(self, target_sr: int) -> Audio:
-        """Resample the audio to the target sample rate."""
-        from audio_segmentation.transcribe import resample
-
         resampled_audio = resample(
             self.data,
             original_sr=self.sr,
