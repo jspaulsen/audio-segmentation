@@ -5,7 +5,6 @@ import numpy as np
 
 from audio_segmentation.types.audio import Audio
 from audio_segmentation.types.segment import Segment
-from audio_segmentation.segmenter import default_segmenter, sentence_segmenter
 from audio_segmentation.transcriber.transcriber import Transcriber
 from audio_segmentation.types.transcription import TranscriptionResult
 from audio_segmentation.verifiers.speaker import SpeakerIdentifier
@@ -52,10 +51,6 @@ def transcribe_audio(
             # We're at the end of the audio.
             last_segment = True
 
-
-        # adjusted_start = int(start * sr / 1000)
-        # adjusted_end = int(end * sr / 1000)
-        # audio_segment = audio[adjusted_start:adjusted_end]
         audio_segment: Audio = naudio[start:end]
 
         # if the segment sample_rate does not match that of the transcriber, we need to resample it

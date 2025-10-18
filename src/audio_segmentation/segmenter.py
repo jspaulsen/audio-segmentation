@@ -46,8 +46,7 @@ def transform_sentence(sentence: str) -> str:
 # TODO:
 # With the introduction of multi-speaker support, we need to rethink how sentence segmentation
 # works. The current implementation assumes a single speaker and matches words to sentences
-# sequentially.
-# This won't work well if there are multiple speakers in the transcription.
+# sequentially. This won't work well if there are multiple speakers in the transcription.
 def sentence_segmenter(
     raw_transcription: RawTranscriptionResult,
     raise_exception_on_mismatch: bool = True
@@ -115,9 +114,6 @@ def sentence_segmenter(
                     start=int(start_time * 1000),  # Convert to milliseconds
                     end=int(end_time * 1000),  # Convert to milliseconds
                     text=sentence,
-
-                    # TODO: This assumes all words in the sentence are from the same speaker
-                    speaker_id=starting_word.speaker_id
                 )
             )
         else:
@@ -130,19 +126,3 @@ def sentence_segmenter(
                 )
 
     return segments
-
-
-def default_segmenter(segments: list[RawSegment]) -> list[Segment]:
-    """
-    Default segmenter that returns the segments as they are.
-
-    NOTE: This only works for sentence level segments. It does not handle word level segmentation.
-    """
-    return [
-        Segment(
-            start=int(segment.start * 1000),  # Convert to milliseconds
-            end=int(segment.end * 1000),  # Convert to milliseconds
-            text=segment.text,
-            speaker_id=segment.speaker_id
-        ) for segment in segments if segment.start is not None and segment.end is not None
-    ]
