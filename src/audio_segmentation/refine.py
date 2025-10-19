@@ -112,6 +112,23 @@ def refine_sentence_segments(
         if current_segment is None:
             current_segment = segment
             continue
+        
+        identifiers = (
+            current_segment.speaker_id is not None,
+            segment.speaker_id is not None,
+        )
+
+        
+        # If either of them are not null or both are not null but different, do not merge
+        if any(identifiers) and not all(identifiers):
+            refined_segments.append(current_segment)
+            current_segment = segment
+            continue
+
+        if current_segment.speaker_id != segment.speaker_id:
+            refined_segments.append(current_segment)
+            current_segment = segment
+            continue
 
         gap = segment.start - current_segment.end
 

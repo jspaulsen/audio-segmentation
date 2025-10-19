@@ -68,3 +68,22 @@ class TestRefinement:
         assert refined[1].text == "Segment 3. Segment 4."
         assert refined[2].text == "Segment 5."
         assert refined[3].text == "Segment 6."
+
+    def test_refine_segments_multispeaker(self):
+        segments = [
+            Segment(start=0, end=1000, text="Segment 1.", speaker_id=None),
+            Segment(start=1200, end=2500, text="Segment 2.", speaker_id=1),
+            Segment(start=3000, end=3200, text="Segment 3.", speaker_id=1),  # Combine with Segment 2
+            Segment(start=3400, end=5000, text="Segment 4.", speaker_id=1),
+            Segment(start=5300, end=6000, text="Segment 5.", speaker_id=2),
+            Segment(start=6200, end=6800, text="Segment 6.", speaker_id=2),
+            Segment(start=7000, end=8000, text="Segment 7.", speaker_id=None),
+        ]
+
+        refined = refine_sentence_segments(segments, max_segment_length_ms=10000)
+
+        assert len(refined) == 4
+        assert refined[0].text == "Segment 1."
+        assert refined[1].text == "Segment 2. Segment 3. Segment 4."
+        assert refined[2].text == "Segment 5. Segment 6."
+        assert refined[3].text == "Segment 7."

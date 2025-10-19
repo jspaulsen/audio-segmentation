@@ -42,7 +42,8 @@ class Segment:
         return Segment(
             start=starting_segment.start,
             end=current_ending_segment.end,
-            text=starting_segment.text + " " + current_ending_segment.text
+            text=starting_segment.text + " " + current_ending_segment.text,
+            speaker_id=self.speaker_id,
         )
 
 
