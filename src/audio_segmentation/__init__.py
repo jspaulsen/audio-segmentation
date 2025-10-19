@@ -1,9 +1,9 @@
 import importlib.util
 
-# from audio_segmentation.refine import (
-#     refine_segment_timestamps,
-#     refine_sentence_segments,
-# )
+from audio_segmentation.refine import (
+    # refine_segment_timestamps,
+    refine_sentence_segments,
+)
 
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import SegmentationException
@@ -39,7 +39,7 @@ __all__ = [
     "NemoTranscriber",
     # TODO: Restore these functions once re-implemented
     # "refine_segment_timestamps",
-    # "refine_sentence_segments",
+    "refine_sentence_segments",
     "Segment",
     "SegmentationException",
     "SpeakerVerifier",
