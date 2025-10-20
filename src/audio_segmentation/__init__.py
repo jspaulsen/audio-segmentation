@@ -1,7 +1,7 @@
 import importlib.util
 
 from audio_segmentation.refine import (
-    # refine_segment_timestamps,
+    refine_segment_timestamps,
     refine_sentence_segments,
 )
 
@@ -38,7 +38,7 @@ __all__ = [
     "NemoModel",
     "NemoTranscriber",
     # TODO: Restore these functions once re-implemented
-    # "refine_segment_timestamps",
+    "refine_segment_timestamps",
     "refine_sentence_segments",
     "Segment",
     "SegmentationException",

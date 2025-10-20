@@ -5,8 +5,10 @@ from audio_segmentation import (
     load_audio,
     NemoTranscriber,
     NemoModel,
+    refine_segment_timestamps,
     transcribe_audio,
 )
+from audio_segmentation.types.segment import Segment
 from audio_segmentation.verifiers.speechbrain import SpeechBrainVerifier
 
 
@@ -28,10 +30,25 @@ def main(device_index: int = 1):
         speaker_verifier=verifier,
         # use_sentence_segmentation=True,
     )
+    
+    segments: list[Segment] = []
+
+    for segment in results.segments:
+        refined_segment = refine_segment_timestamps(
+            audio=audio,
+            sr=sr,
+            segment=segment,
+            max_look_ms=500,
+            min_silence_len=200,
+            silence_thresh=-40,
+            padding=100,
+        )
+
+        segments.append(refined_segment)
 
     # Output the segment to a file
     with open("example_transcription.txt", "w") as f:
-        for segment in results.segments:
+        for segment in segments:
             f.write(f"{segment.speaker_id}, {segment.text}\n")
             print(f"Segment: {segment.start} - {segment.end}, Text: {segment.text}")
 
