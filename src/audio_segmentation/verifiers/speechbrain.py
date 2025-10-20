@@ -14,11 +14,9 @@ class SpeechBrainVerifier(SpeakerVerifier):
 
         model: SpeakerRecognition | None = SpeakerRecognition.from_hparams(
             source="speechbrain/spkrec-ecapa-voxceleb",
-
-            # TODO: This is not respecting the device_index properly
-            run_opts={"device_index": f"cuda:{device_index}"} if device_index is not None else None,
+            run_opts={"device": f"cuda:{device_index}" if device_index is not None else "cpu"},
         )
-
+        
         if not model:
             raise ValueError("Failed to load SpeechBrain model")
 
