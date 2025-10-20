@@ -44,7 +44,7 @@ class Audio:
         return Audio(data=self.data[start:stop:step], sr=self.sr)
 
     def __len__(self) -> int:
-        return int(len(self.data) * 1000 / self.sr)  # length in milliseconds
+        return int(self.data.shape[-1] * 1000 / self.sr)  # length in milliseconds
 
     def __repr__(self) -> str:
         return f"Audio(sr={self.sr}, duration={len(self)} ms)"
