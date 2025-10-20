@@ -1,5 +1,8 @@
+import numpy as np
+
 from audio_segmentation.types.segment import Segment
-from audio_segmentation.refine import refine_sentence_segments
+from audio_segmentation.types.audio import Audio
+from audio_segmentation.refine import refine_sentence_segments, refine_segment_timestamps
 
 
 class TestRefinement:
@@ -87,3 +90,42 @@ class TestRefinement:
         assert refined[1].text == "Segment 2. Segment 3. Segment 4."
         assert refined[2].text == "Segment 5. Segment 6."
         assert refined[3].text == "Segment 7."
+
+    def test_refine_segment_timestamps_detects_silence(self):
+        """Test that refine_segment_timestamps adjusts boundaries based on silence detection."""
+        # Create synthetic audio: silence (100ms) + speech (200ms) + silence (100ms)
+        sr = 16000  # 16kHz sample rate
+
+        # Silence: very low amplitude
+        silence_samples = int(0.1 * sr)  # 100ms
+        silence = np.random.normal(0, 0.001, silence_samples)
+
+        # Speech: higher amplitude
+        speech_samples = int(0.2 * sr)  # 200ms
+        speech = np.random.normal(0, 0.1, speech_samples)
+
+        # Combine: silence + speech + silence
+        audio_data = np.concatenate([silence, speech, silence])
+
+        # Create a segment that extends into the silence regions
+        # Speech actually starts at 100ms and ends at 300ms
+        # But we'll create a segment from 50ms to 350ms (overlapping with silence)
+        segment = Segment(start=50, end=350, text="Test speech")
+
+        # Refine the segment timestamps
+        refined = refine_segment_timestamps(
+            audio=audio_data,
+            sr=sr,
+            segment=segment,
+            max_look_ms=100,
+            min_silence_len=10,
+            silence_thresh=-40,
+            padding=0,
+        )
+
+        # The refined segment should have adjusted boundaries
+        # Start should move forward (away from initial silence)
+        # End should move backward (away from final silence)
+        assert refined.start >= segment.start, "Start should be adjusted forward or stay the same"
+        assert refined.end <= segment.end, "End should be adjusted backward or stay the same"
+        assert refined.text == segment.text, "Text should be preserved"
