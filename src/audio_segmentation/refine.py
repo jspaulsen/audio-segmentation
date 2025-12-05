@@ -4,6 +4,7 @@ from audio_segmentation.types.segment import Segment
 from audio_segmentation.types.audio import Audio
 
 
+
 def detect_silence(
     audio: Audio,
     min_silence_len: int,
@@ -56,6 +57,45 @@ def detect_silence(
             silences.append([start_ms, end_ms])
 
     return silences
+
+
+def estimate_min_silence_len(
+    audio: Audio,
+    silence_thresh: int,
+    percentile: float = 25.0,
+) -> int:
+    silences = detect_silence(
+        audio,
+        min_silence_len=50,
+        silence_thresh=silence_thresh,
+    )
+
+    if not silences:
+        return 150  # fallback
+
+    # Calculate silence durations
+    durations = [end - start for start, end in silences]
+
+    # Use the median silence duration, or 25th percentile
+    # This filters out very brief noise while catching real pauses
+    min_silence = int(np.percentile(durations, percentile))
+
+    # Clamp to reasonable range
+    return max(100, min(min_silence, 500))
+
+
+def estimate_thresholds(
+    audio: Audio,
+    silence_percentile: float = 10.0,
+    minimum_silence_percentile: float = 25.0,
+) -> tuple[int, int]:
+    data = np.abs(audio.data.flatten())
+
+    silence_level = np.percentile(data[data > 0], silence_percentile)
+    silence_thresh = int(20 * np.log10(silence_level + 1e-10))
+
+    min_silence_len = estimate_min_silence_len(audio, silence_thresh, percentile=minimum_silence_percentile)
+    return min_silence_len, silence_thresh
 
 
 def refine_start(
@@ -131,6 +171,27 @@ def refine_end(
     return initial_end_ms
 
 
+def refine_segment_timestamps_automatic(
+    audio: np.ndarray,
+    sr: int,
+    segment: Segment,
+    max_look_ms: int = 50,
+    padding: int = 0,
+) -> Segment:
+    naudio = Audio(data=audio, sr=sr)
+    min_silence_len, silence_thresh = estimate_thresholds(naudio)
+
+    return refine_segment_timestamps(
+        audio,
+        sr,
+        segment,
+        max_look_ms=max_look_ms,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh,
+        padding=padding,
+    )
+
+
 def refine_segment_timestamps(
     audio: np.ndarray,
     sr: int,
@@ -204,13 +265,13 @@ def refine_sentence_segments(
         if current_segment is None:
             current_segment = segment
             continue
-        
+
         identifiers = (
             current_segment.speaker_id is not None,
             segment.speaker_id is not None,
         )
 
-        
+
         # If either of them are not null or both are not null but different, do not merge
         if any(identifiers) and not all(identifiers):
             refined_segments.append(current_segment)

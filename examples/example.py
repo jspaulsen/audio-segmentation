@@ -6,6 +6,7 @@ from audio_segmentation import (
     NemoTranscriber,
     NemoModel,
     refine_segment_timestamps,
+    refine_segment_timestamps_automatic,
     transcribe_audio,
 )
 from audio_segmentation.types.segment import Segment
@@ -30,28 +31,26 @@ def main(device_index: int = 1):
         speaker_verifier=verifier,
         # use_sentence_segmentation=True,
     )
-    
+
     segments: list[Segment] = []
 
     for segment in results.segments:
-        refined_segment = refine_segment_timestamps(
+        refined_segment = refine_segment_timestamps_automatic(
             audio=audio,
             sr=sr,
             segment=segment,
             max_look_ms=500,
-            min_silence_len=200,
-            silence_thresh=-40,
-            padding=100,
+            # min_silence_len=200,
+            # silence_thresh=-40,
+            padding=20,
         )
 
         segments.append(refined_segment)
 
-    # Output the segment to a file
-    with open("example_transcription.txt", "w") as f:
-        for segment in segments:
-            f.write(f"{segment.speaker_id}, {segment.text}\n")
-            print(f"Segment: {segment.start} - {segment.end}, Text: {segment.text}")
-
+    # Output an audacity label file
+    with open("example_transcription.labels", "w") as f:
+        for index, segment in enumerate(segments):
+            f.write(f"{segment.start/1000:.4f}\t{segment.end/1000:.4f}\t{index}\n")
 
 
 if __name__ == "__main__":

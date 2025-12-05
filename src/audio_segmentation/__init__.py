@@ -3,6 +3,7 @@ import importlib.util
 from audio_segmentation.refine import (
     refine_segment_timestamps,
     refine_sentence_segments,
+    refine_segment_timestamps_automatic,
 )
 
 from audio_segmentation.types.segment import Segment
@@ -37,9 +38,9 @@ __all__ = [
     "load_audio",
     "NemoModel",
     "NemoTranscriber",
-    # TODO: Restore these functions once re-implemented
     "refine_segment_timestamps",
     "refine_sentence_segments",
+    "refine_segment_timestamps_automatic",
     "Segment",
     "SegmentationException",
     "SpeakerVerifier",
