@@ -1,11 +1,11 @@
 import importlib.util
 
 from audio_segmentation.refine import (
+    estimate_thresholds,
     refine_segment_timestamps,
     refine_sentence_segments,
-    refine_segment_timestamps_automatic,
 )
-
+from audio_segmentation.types.audio import Audio
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.segmenter import SegmentationException
 from audio_segmentation.transcribe import transcribe_audio
@@ -35,12 +35,13 @@ if importlib.util.find_spec("speechbrain"):
 
 # Export all classes and functions
 __all__ = [
+    'Audio',
     "load_audio",
+    "estimate_thresholds",
     "NemoModel",
     "NemoTranscriber",
     "refine_segment_timestamps",
     "refine_sentence_segments",
-    "refine_segment_timestamps_automatic",
     "Segment",
     "SegmentationException",
     "SpeakerVerifier",

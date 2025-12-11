@@ -21,7 +21,7 @@ explicit = true
 
 [project.optional-dependencies]
 nemo = [
-    "cuda-python>=12.9.0",
+    "cuda-python>=12.8.0",
     "nemo-toolkit[asr]>=2.2.1",
 ]
 whisperx = [
