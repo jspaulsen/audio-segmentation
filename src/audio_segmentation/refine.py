@@ -1,144 +1,68 @@
+import librosa
 import numpy as np
 
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.types.audio import Audio
 
 
-def detect_silence(
-    audio: Audio,
-    min_silence_len: int,
-    silence_thresh: int,
-) -> list[list[int]]:
+def detect_edge_energy(
+    data: np.ndarray,
+    sr: int,
+    threshold_db: float = 40,
+    hop_length: int = 128,
+    frame_length: int = 1024,
+) -> int | None:
     """
-    Detect silence in audio based on RMS energy threshold.
+    Detects the edge based on when energy rises above a threshold relative to the peak.
 
     Args:
-        audio (Audio): The audio to analyze.
-        min_silence_len (int): Minimum length of silence in milliseconds.
-        silence_thresh (int): Silence threshold in dBFS.
+        data: Audio data.
+        sr: Sample rate.
+        threshold_db: The threshold in decibels below the peak to consider 'silence'.
+            40dB is a good standard for speech (1% of peak amplitude).
+            Higher values (e.g., 50) are more sensitive, Lower (e.g., 30) cut more audio.
 
     Returns:
-        list[list[int]]: List of [start_ms, end_ms] pairs for silent regions.
+        int | None: The timestamp in milliseconds where the edge is detected, or None if no edge is found.
     """
-    audio_data = audio.data
+    if len(data) == 0:
+        return None
 
-    # Convert dBFS to amplitude (assuming audio is normalized to [-1, 1])
-    # dBFS = 20 * log10(amplitude)
-    # amplitude = 10^(dBFS/20)
-    amplitude_thresh = 10 ** (silence_thresh / 20.0)
+    rms = librosa.feature.rms(y=data, frame_length=frame_length, hop_length=hop_length)[0]
 
-    # Handle both mono and stereo audio
-    if audio_data.ndim > 1:
-        audio_data = np.mean(np.abs(audio_data), axis=0)  # For multi-channel, take the mean across channels
-    else:
-        audio_data = np.abs(audio_data)
+    if len(rms) == 0:
+        return None
 
-    # Create boolean mask where audio is below threshold (silence)
-    is_silent = audio_data < amplitude_thresh
+    # Convert to Decibels relative to the peak of this specific segment
+    max_rms = np.max(rms)
 
-    # Find contiguous regions of silence
-    # Pad with False to detect edges properly
-    padded = np.pad(is_silent, (1, 1), constant_values=False)
-    diff = np.diff(padded.astype(int))
+    if max_rms == 0:
+        return None
 
-    # Find starts and ends of silent regions
-    starts = np.where(diff == 1)[0]
-    ends = np.where(diff == -1)[0]
+    rms_db = librosa.amplitude_to_db(rms, ref=max_rms)
 
-    # Convert sample indices to milliseconds and filter by minimum length
-    silences = []
-    min_silence_samples = int(min_silence_len * audio.sr / 1000)
+    # Find the first frame that exceeds the threshold (e.g., > -40dB)
+    mask = rms_db > -threshold_db
 
-    for start_idx, end_idx in zip(starts, ends):
-        if end_idx - start_idx >= min_silence_samples:
-            start_ms = int(start_idx * 1000 / audio.sr)
-            end_ms = int(end_idx * 1000 / audio.sr)
-            silences.append([start_ms, end_ms])
+    # np.argmax on a boolean array returns the index of the first True
+    if not np.any(mask):
+        return None # The whole clip is silence
 
-    return silences
+    first_frame_index = np.argmax(mask)
 
-
-def refine_start(
-    audio: Audio,
-    initial_start_ms: int,
-    max_lookback_ms: int,
-    min_silence_len: int,
-    silence_thresh: int,
-    padding: int = 0,
-) -> int:
-    """
-    Refine the start timestamp of a segment by looking back for silence.
-
-    Args:
-        audio (Audio): The audio to analyze.
-        initial_start_ms (int): Initial start time in milliseconds.
-        max_lookback_ms (int): Maximum milliseconds to look back for silence.
-        min_silence_len (int): Minimum length of silence to consider it valid.
-        silence_thresh (int): Silence threshold in dBFS.
-        padding (int): Padding in milliseconds to apply after refining.
-
-    Returns:
-        int: Refined start time in milliseconds.
-    """
-    lookback_start = max(0, initial_start_ms - max_lookback_ms)
-    segment_to_check = audio[lookback_start:initial_start_ms]
-    silences: list[list[int]] = detect_silence(
-        segment_to_check,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh
-    )
-
-    if silences:  # Find the last silence that ends just before the original start
-        return lookback_start + silences[-1][1] - padding
-
-    # If no silence was found, return the original
-    return initial_start_ms
-
-
-def refine_end(
-    audio: Audio,
-    initial_end_ms: int,
-    max_lookahead_ms: int,
-    min_silence_len: int,
-    silence_thresh: int,
-    padding: int = 0,
-) -> int:
-    """
-    Refine the end timestamp of a segment by looking ahead for silence.
-
-    Args:
-        audio (Audio): The audio to analyze.
-        initial_end_ms (int): Initial end time in milliseconds.
-        max_lookahead_ms (int): Maximum milliseconds to look ahead for silence.
-        min_silence_len (int): Minimum length of silence to consider it valid.
-        silence_thresh (int): Silence threshold in dBFS.
-        padding (int): Padding in milliseconds to apply after refining.
-
-    Returns:
-        int: Refined end time in milliseconds.
-    """
-    lookahead_end = min(len(audio), initial_end_ms + max_lookahead_ms)
-    segment_to_check = audio[initial_end_ms:lookahead_end]
-    silences: list[list[int]] = detect_silence(
-        segment_to_check,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh
-    )
-
-    if silences:  # Snap to the start of the first silence found
-        return initial_end_ms + silences[0][0] + padding
-
-    return initial_end_ms
+    # Convert frame index back to time (ms)
+    sample_index = librosa.frames_to_samples(first_frame_index, hop_length=hop_length)
+    return int((sample_index / sr) * 1000)
 
 
 def refine_segment_timestamps(
     audio: np.ndarray,
     sr: int,
     segment: Segment,
-    max_look_ms: int = 100,
-    min_silence_len: int = 10,
-    silence_thresh: int = -40,
-    padding: int = 0,
+    search_boundary: int = 200,
+    hop_length: int = 128,
+    frame_length: int = 1024,
+    pad: int = 0,
 ) -> Segment:
     """
     Attempts to refine the start and end timestamps of a segment based on silence detection.
@@ -147,34 +71,36 @@ def refine_segment_timestamps(
         audio (np.ndarray): The audio data.
         sr (int): Sample rate of the audio data.
         segment (Segment): The segment with initial start and end timestamps.
-        max_look_ms (int): Maximum milliseconds to look back or ahead for silence.
-        min_silence_len (int): Minimum length of silence to consider it valid.
-        silence_thresh (int): Silence threshold in dBFS.
-        padding (int): Padding in milliseconds to apply after refining.
+        search_boundary (int): Maximum milliseconds to look back or ahead for silence.
+        hop_length (int): Hop length for the short-time Fourier transform.
+        frame_length (int): Frame length for the short-time Fourier transform.
+        pad (int): Padding in milliseconds to apply before and after the refined timestamps if needed.
+            Default is 0.
 
     Returns:
         Segment: A new Segment with refined start and end timestamps.
     """
-    naudio = Audio(data=audio, sr=sr)  # Assuming a sample rate of 16kHz; adjust as needed
-    start = refine_start(
-        naudio,
-        segment.start,
-        max_lookback_ms=max_look_ms,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh,
-        padding=padding,
-    )
+    naudio = Audio(data=audio, sr=sr)
 
-    end = refine_end(
-        naudio,
-        segment.end,
-        max_lookahead_ms=max_look_ms,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh,
-        padding=padding,
-    )
+    lookback = segment.start - search_boundary
+    lookforward = segment.end + search_boundary
+    nsegment = naudio[lookback:lookforward]
 
-    return Segment(start=start, end=end, text=segment.text, speaker_id=segment.speaker_id)
+    predicted_start = detect_edge_energy(nsegment.data, nsegment.sr, hop_length=hop_length, frame_length=frame_length)
+    predicted_end = detect_edge_energy(nsegment.data[::-1], nsegment.sr, hop_length=hop_length, frame_length=frame_length)  # reversed
+
+    if predicted_start is not None:
+        predicted_start = max(0, predicted_start - pad)
+
+    if predicted_end is not None:
+        predicted_end = max(0, predicted_end + pad)
+
+    return Segment(
+        start=lookback + predicted_start if predicted_start is not None else segment.start,
+        end=lookforward - predicted_end if predicted_end is not None else segment.end,
+        text=segment.text,
+        speaker_id=segment.speaker_id
+    )
 
 
 def refine_sentence_segments(
@@ -204,13 +130,12 @@ def refine_sentence_segments(
         if current_segment is None:
             current_segment = segment
             continue
-        
+
         identifiers = (
             current_segment.speaker_id is not None,
             segment.speaker_id is not None,
         )
 
-        
         # If either of them are not null or both are not null but different, do not merge
         if any(identifiers) and not all(identifiers):
             refined_segments.append(current_segment)
