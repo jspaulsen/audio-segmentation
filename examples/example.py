@@ -2,14 +2,12 @@ from pathlib import Path
 
 from audio_segmentation.transcribe import transcribe_audio
 from audio_segmentation import (
-    estimate_thresholds,
     load_audio,
     NemoTranscriber,
     NemoModel,
     refine_segment_timestamps,
     transcribe_audio,
 )
-from audio_segmentation.types.audio import Audio
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.verifiers.speechbrain import SpeechBrainVerifier
 
@@ -34,16 +32,13 @@ def main(device_index: int = 1):
     )
 
     segments: list[Segment] = []
-    min_silence_len, silence_thresh = estimate_thresholds(audio, sr, silence_percentile=15.0)
 
-    for segment in results.segments:
+    for i, segment in enumerate(results.segments):
         refined_segment = refine_segment_timestamps(
             audio=audio,
             sr=sr,
             segment=segment,
-            max_look_ms=50,
-            min_silence_len=min_silence_len,
-            silence_thresh=silence_thresh
+            search_boundary=150,
         )
 
         segments.append(refined_segment)

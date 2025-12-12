@@ -1,7 +1,6 @@
 import importlib.util
 
 from audio_segmentation.refine import (
-    estimate_thresholds,
     refine_segment_timestamps,
     refine_sentence_segments,
 )
@@ -37,7 +36,6 @@ if importlib.util.find_spec("speechbrain"):
 __all__ = [
     'Audio',
     "load_audio",
-    "estimate_thresholds",
     "NemoModel",
     "NemoTranscriber",
     "refine_segment_timestamps",
