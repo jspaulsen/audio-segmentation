@@ -92,7 +92,7 @@ class TestRefinement:
         assert refined[3].text == "Segment 7."
 
     def test_refine_segment_timestamps_detects_silence(self):
-        """Test that refine_segment_timestamps adjusts boundaries based on silence detection."""
+        """Test that refine_segment_timestamps finds true speech boundaries."""
         # Create synthetic audio: silence (100ms) + speech (200ms) + silence (100ms)
         sr = 16000  # 16kHz sample rate
 
@@ -107,25 +107,25 @@ class TestRefinement:
         # Combine: silence + speech + silence
         audio_data = np.concatenate([silence, speech, silence])
 
-        # Create a segment that extends into the silence regions
-        # Speech actually starts at 100ms and ends at 300ms
-        # But we'll create a segment from 50ms to 350ms (overlapping with silence)
-        segment = Segment(start=50, end=350, text="Test speech")
+        # Create a segment that's too narrow (misses some speech)
+        # Speech actually runs from ~100ms to ~300ms
+        # Segment from 150ms to 250ms cuts off start and end
+        segment = Segment(start=150, end=250, text="Test speech")
 
-        # Refine the segment timestamps
+        # Refine the segment timestamps - looks in expanded window to find true boundaries
         refined = refine_segment_timestamps(
             audio=audio_data,
             sr=sr,
             segment=segment,
-            max_look_ms=100,
-            min_silence_len=10,
-            silence_thresh=-40,
-            padding=0,
+            search_boundary=100,  # Look 100ms before/after
+            pad=0,
         )
 
-        # The refined segment should have adjusted boundaries
-        # Start should move forward (away from initial silence)
-        # End should move backward (away from final silence)
-        assert refined.start >= segment.start, "Start should be adjusted forward or stay the same"
-        assert refined.end <= segment.end, "End should be adjusted backward or stay the same"
+        # The refined segment should find the actual speech boundaries
+        # Start should move earlier (toward actual speech start ~100ms)
+        # End should move later (toward actual speech end ~300ms)
+        assert refined.start < segment.start, "Start should be adjusted earlier to capture speech"
+        assert refined.end > segment.end, "End should be adjusted later to capture speech"
+        assert refined.start >= 50, "Start should be within search window"
+        assert refined.end <= 350, "End should be within search window"
         assert refined.text == segment.text, "Text should be preserved"
