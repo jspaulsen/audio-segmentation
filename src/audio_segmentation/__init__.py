@@ -1,5 +1,7 @@
 import importlib.util
 
+from audio_segmentation.aligner.aligner import Aligner
+from audio_segmentation.aligner.torchaudio import AlignerModel, TorchAudioAligner
 from audio_segmentation.refine import (
     refine_segment_timestamps,
     refine_sentence_segments,
@@ -34,7 +36,9 @@ if importlib.util.find_spec("speechbrain"):
 
 # Export all classes and functions
 __all__ = [
-    'Audio',
+    "Aligner",
+    "AlignerModel",
+    "Audio",
     "load_audio",
     "NemoModel",
     "NemoTranscriber",
@@ -44,6 +48,7 @@ __all__ = [
     "SegmentationException",
     "SpeakerVerifier",
     "SpeechBrainVerifier",
+    "TorchAudioAligner",
     "transcribe_audio",
     "Transcriber",
     "WhisperxModel",
