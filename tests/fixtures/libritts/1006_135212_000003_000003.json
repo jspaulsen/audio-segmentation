@@ -1,0 +1,203 @@
+{
+  "id": "1006_135212_000003_000003",
+  "text": "He appeared, as far as the guard could judge by so hurried an inspection, to be a man between fifty and sixty years of age, who had retained a good deal of the vigour and activity of his youth.",
+  "duration": 12.760166666666667,
+  "words": [
+    {
+      "text": "he",
+      "start": 0.03,
+      "end": 0.21
+    },
+    {
+      "text": "appeared",
+      "start": 0.21,
+      "end": 0.63
+    },
+    {
+      "text": "as",
+      "start": 0.66,
+      "end": 0.8
+    },
+    {
+      "text": "far",
+      "start": 0.8,
+      "end": 1.16
+    },
+    {
+      "text": "as",
+      "start": 1.2,
+      "end": 1.33
+    },
+    {
+      "text": "the",
+      "start": 1.33,
+      "end": 1.42
+    },
+    {
+      "text": "guard",
+      "start": 1.42,
+      "end": 1.8
+    },
+    {
+      "text": "could",
+      "start": 1.8,
+      "end": 2.0
+    },
+    {
+      "text": "judge",
+      "start": 2.0,
+      "end": 2.38
+    },
+    {
+      "text": "by",
+      "start": 2.74,
+      "end": 2.9
+    },
+    {
+      "text": "so",
+      "start": 2.9,
+      "end": 3.19
+    },
+    {
+      "text": "hurried",
+      "start": 3.19,
+      "end": 3.72
+    },
+    {
+      "text": "an",
+      "start": 3.81,
+      "end": 3.95
+    },
+    {
+      "text": "inspection",
+      "start": 3.95,
+      "end": 4.72
+    },
+    {
+      "text": "to",
+      "start": 5.18,
+      "end": 5.27
+    },
+    {
+      "text": "be",
+      "start": 5.27,
+      "end": 5.49
+    },
+    {
+      "text": "a",
+      "start": 5.52,
+      "end": 5.59
+    },
+    {
+      "text": "man",
+      "start": 5.59,
+      "end": 5.99
+    },
+    {
+      "text": "between",
+      "start": 5.99,
+      "end": 6.3
+    },
+    {
+      "text": "fifty",
+      "start": 6.3,
+      "end": 6.72
+    },
+    {
+      "text": "and",
+      "start": 6.72,
+      "end": 6.85
+    },
+    {
+      "text": "sixty",
+      "start": 6.85,
+      "end": 7.27
+    },
+    {
+      "text": "years",
+      "start": 7.27,
+      "end": 7.59
+    },
+    {
+      "text": "of",
+      "start": 7.59,
+      "end": 7.77
+    },
+    {
+      "text": "age",
+      "start": 7.8,
+      "end": 8.13
+    },
+    {
+      "text": "who",
+      "start": 8.55,
+      "end": 8.7
+    },
+    {
+      "text": "had",
+      "start": 8.7,
+      "end": 8.93
+    },
+    {
+      "text": "retained",
+      "start": 8.93,
+      "end": 9.51
+    },
+    {
+      "text": "a",
+      "start": 9.55,
+      "end": 9.62
+    },
+    {
+      "text": "good",
+      "start": 9.62,
+      "end": 10.0
+    },
+    {
+      "text": "deal",
+      "start": 10.0,
+      "end": 10.24
+    },
+    {
+      "text": "of",
+      "start": 10.32,
+      "end": 10.47
+    },
+    {
+      "text": "the",
+      "start": 10.47,
+      "end": 10.56
+    },
+    {
+      "text": "vigour",
+      "start": 10.56,
+      "end": 11.03
+    },
+    {
+      "text": "and",
+      "start": 11.08,
+      "end": 11.29
+    },
+    {
+      "text": "activity",
+      "start": 11.32,
+      "end": 11.91
+    },
+    {
+      "text": "of",
+      "start": 11.91,
+      "end": 12.07
+    },
+    {
+      "text": "his",
+      "start": 12.07,
+      "end": 12.35
+    },
+    {
+      "text": "youth",
+      "start": 12.35,
+      "end": 12.6
+    }
+  ],
+  "sample_rate": 16000
+}

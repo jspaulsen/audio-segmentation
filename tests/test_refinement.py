@@ -5,6 +5,23 @@ from audio_segmentation.types.audio import Audio
 from audio_segmentation.refine import refine_sentence_segments, refine_segment_timestamps
 
 
+def _synthetic_audio(
+    sr: int,
+    duration_ms: int,
+    speech_start_ms: int,
+    speech_end_ms: int,
+) -> np.ndarray:
+    """Near-silence for the whole file, with louder 'speech' over the given range."""
+    rng = np.random.default_rng(0)
+    data = rng.normal(0, 0.0001, int(duration_ms * sr / 1000))
+
+    start = int(speech_start_ms * sr / 1000)
+    end = int(speech_end_ms * sr / 1000)
+    data[start:end] = rng.normal(0, 0.1, end - start)
+
+    return data
+
+
 class TestRefinement:
     def test_refine_segments_combines_with_short_gap(self):
         segments = [
@@ -129,3 +146,54 @@ class TestRefinement:
         assert refined.start >= 50, "Start should be within search window"
         assert refined.end <= 350, "End should be within search window"
         assert refined.text == segment.text, "Text should be preserved"
+
+    def test_refine_segment_timestamps_near_audio_start(self):
+        """Segments within search_boundary of t=0 should still be refined."""
+        # Speech runs from 50ms to 400ms in a 1s file.
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=50, speech_end_ms=400)
+
+        # lookback would be -100ms, which must not be treated as an index from the end.
+        segment = Segment(start=100, end=300, text="Test speech")
+
+        refined = refine_segment_timestamps(
+            audio=audio_data,
+            sr=16000,
+            segment=segment,
+            search_boundary=200,
+            pad=0,
+        )
+
+        assert refined.start < segment.start, "Start should be adjusted earlier to capture speech"
+        assert 0 <= refined.start <= 60, "Start should land on the speech onset at ~50ms"
+
+    def test_refine_segment_timestamps_near_audio_end(self):
+        """The refined end must not run past the end of the audio."""
+        # Speech runs from 400ms to 600ms in a 1s file.
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=400, speech_end_ms=600)
+
+        # lookforward would be 1100ms, past the end of a 1000ms file.
+        segment = Segment(start=500, end=900, text="Test speech")
+
+        refined = refine_segment_timestamps(
+            audio=audio_data,
+            sr=16000,
+            segment=segment,
+            search_boundary=200,
+            pad=0,
+        )
+
+        assert refined.end <= 1000, "End should not exceed the length of the audio"
+        assert abs(refined.end - 600) <= 40, "End should land on the speech offset at ~600ms"
+
+    def test_refine_segment_timestamps_pad_widens_both_edges(self):
+        """pad should extend the segment on both sides, not shift it."""
+        # Speech runs from 400ms to 600ms in a 1s file; the search window stays in bounds.
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=400, speech_end_ms=600)
+        segment = Segment(start=300, end=700, text="Test speech")
+
+        kwargs = dict(audio=audio_data, sr=16000, segment=segment, search_boundary=200)
+        unpadded = refine_segment_timestamps(**kwargs, pad=0)
+        padded = refine_segment_timestamps(**kwargs, pad=50)
+
+        assert padded.start == unpadded.start - 50
+        assert padded.end == unpadded.end + 50
