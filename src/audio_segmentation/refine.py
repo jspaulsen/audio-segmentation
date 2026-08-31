@@ -82,8 +82,11 @@ def refine_segment_timestamps(
     """
     naudio = Audio(data=audio, sr=sr)
 
-    lookback = segment.start - search_boundary
-    lookforward = segment.end + search_boundary
+    # Clamp to the bounds of the audio; a negative lookback would be read as an
+    # index from the end, and a lookforward past the end would be silently
+    # truncated by the slice while still being used as the reference point below.
+    lookback = max(0, segment.start - search_boundary)
+    lookforward = min(len(naudio), segment.end + search_boundary)
     nsegment = naudio[lookback:lookforward]
 
     predicted_start = detect_edge_energy(nsegment.data, nsegment.sr, hop_length=hop_length, frame_length=frame_length)
@@ -92,8 +95,10 @@ def refine_segment_timestamps(
     if predicted_start is not None:
         predicted_start = max(0, predicted_start - pad)
 
+    # predicted_end is a distance measured back from lookforward, so padding the
+    # end of the segment means shrinking it.
     if predicted_end is not None:
-        predicted_end = max(0, predicted_end + pad)
+        predicted_end = max(0, predicted_end - pad)
 
     return Segment(
         start=lookback + predicted_start if predicted_start is not None else segment.start,

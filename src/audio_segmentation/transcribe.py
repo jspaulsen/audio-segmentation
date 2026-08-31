@@ -134,7 +134,7 @@ def transcribe_audio(
         # The segment timestamps are relative to the provided segment, so we add the start time
         # of the segment to each segment to make them absolute.
         for segment in result.segments:
-            if not segment.start or not segment.end:
+            if segment.start is None or segment.end is None:
                 continue
             
             nsegment = Segment(
@@ -153,6 +153,16 @@ def transcribe_audio(
                 nsegment.speaker_id = speaker_id
             
             segments.append(nsegment)
+
+        # Every segment for this chunk was unusable; advance past the chunk
+        # rather than indexing into an empty list below.
+        if not segments:
+            logger.debug(
+                f"No usable segments in chunk from {start / 1000:.2f}s to {end / 1000:.2f}s.",
+            )
+
+            start = end
+            continue
 
         # If there's more segments to come, we should pop off the last segment
         # as it's likely to be a partial sentence

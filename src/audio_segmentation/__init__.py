@@ -15,12 +15,33 @@ from audio_segmentation.utility import load_audio
 from audio_segmentation.verifiers.verifier import SpeakerVerifier
 
 
-# Only import transcribers if their respective libraries are available
+# Export all classes and functions
+__all__ = [
+    "Aligner",
+    "AlignerModel",
+    "Audio",
+    "load_audio",
+    "refine_segment_timestamps",
+    "refine_sentence_segments",
+    "Segment",
+    "SegmentationException",
+    "SpeakerVerifier",
+    "TorchAudioAligner",
+    "transcribe_audio",
+    "Transcriber",
+]
+
+
+# Only import transcribers if their respective libraries are available; the
+# names they provide are exported alongside the import so that `import *`
+# doesn't reference a name that was never bound.
 if importlib.util.find_spec("nemo"):
     from audio_segmentation.transcriber.nemo import (
         NemoTranscriber,
         NemoModel,
     )
+
+    __all__ += ["NemoModel", "NemoTranscriber"]
 
 
 if importlib.util.find_spec("whisperx"):
@@ -29,28 +50,10 @@ if importlib.util.find_spec("whisperx"):
         WhisperxModel,
     )
 
+    __all__ += ["WhisperxModel", "WhisperxTranscriber"]
+
 
 if importlib.util.find_spec("speechbrain"):
     from audio_segmentation.verifiers.speechbrain import SpeechBrainVerifier
 
-
-# Export all classes and functions
-__all__ = [
-    "Aligner",
-    "AlignerModel",
-    "Audio",
-    "load_audio",
-    "NemoModel",
-    "NemoTranscriber",
-    "refine_segment_timestamps",
-    "refine_sentence_segments",
-    "Segment",
-    "SegmentationException",
-    "SpeakerVerifier",
-    "SpeechBrainVerifier",
-    "TorchAudioAligner",
-    "transcribe_audio",
-    "Transcriber",
-    "WhisperxModel",
-    "WhisperxTranscriber",
-]
+    __all__ += ["SpeechBrainVerifier"]

@@ -36,13 +36,12 @@ class Segment:
         """
         Combine two segments into one, merging their text and adjusting start/end times.
         """
-        starting_segment = self if self.start < other.start else other
-        current_ending_segment = self if self.end > other.end else other
+        first, second = (self, other) if self.start <= other.start else (other, self)
 
         return Segment(
-            start=starting_segment.start,
-            end=current_ending_segment.end,
-            text=starting_segment.text + " " + current_ending_segment.text,
+            start=first.start,
+            end=max(self.end, other.end),
+            text=first.text + " " + second.text,
             speaker_id=self.speaker_id,
         )
 
