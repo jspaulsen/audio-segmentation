@@ -4,7 +4,6 @@ from typing import Protocol, TypedDict, cast
 
 from nemo.collections.asr.models import EncDecRNNTBPEModel, EncDecMultiTaskModel
 import numpy as np
-import pydub
 
 from audio_segmentation.types.segment import RawSegment
 from audio_segmentation.transcriber.transcriber import Transcriber, RawTranscriptionResult

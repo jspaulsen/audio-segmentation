@@ -2,7 +2,11 @@ import numpy as np
 
 from audio_segmentation.types.segment import Segment
 from audio_segmentation.types.audio import Audio
-from audio_segmentation.refine import refine_sentence_segments, refine_segment_timestamps
+from audio_segmentation.refine import (
+    refine_segment_timestamps,
+    refine_segment_timestamps_batch,
+    refine_sentence_segments,
+)
 
 
 def _synthetic_audio(
@@ -197,3 +201,250 @@ class TestRefinement:
 
         assert padded.start == unpadded.start - 50
         assert padded.end == unpadded.end + 50
+
+
+def _multi_speech_audio(
+    sr: int,
+    duration_ms: int,
+    spans_ms: list[tuple[int, int]],
+) -> np.ndarray:
+    """Near-silence for the whole file, with louder 'speech' over each given range."""
+    rng = np.random.default_rng(0)
+    data = rng.normal(0, 0.0001, int(duration_ms * sr / 1000))
+
+    for speech_start_ms, speech_end_ms in spans_ms:
+        start = int(speech_start_ms * sr / 1000)
+        end = int(speech_end_ms * sr / 1000)
+        data[start:end] = rng.normal(0, 0.1, end - start)
+
+    return data
+
+
+class TestNeighbourAwareRefinement:
+    def test_end_does_not_run_into_the_next_segment(self):
+        """A search_boundary wider than the gap must not snap the end onto the neighbour."""
+        # Two utterances with only a 40ms gap between them.
+        audio_data = _multi_speech_audio(sr=16000, duration_ms=2000, spans_ms=[(200, 800), (840, 1500)])
+
+        segment = Segment(start=250, end=750, text="First")
+        following = Segment(start=840, end=1500, text="Second")
+
+        # 200ms of lookforward from end=750 reaches 950ms, well inside the second utterance.
+        unaware = refine_segment_timestamps(audio=audio_data, sr=16000, segment=segment, search_boundary=200)
+        aware = refine_segment_timestamps(
+            audio=audio_data,
+            sr=16000,
+            segment=segment,
+            search_boundary=200,
+            next_segment=following,
+        )
+
+        # Without neighbour awareness the reversed detector fires on the second
+        # utterance and drags the end across the gap.
+        assert unaware.end > following.start, "precondition: the unaware call is expected to corrupt the end"
+
+        assert aware.end <= (segment.end + following.start) // 2, "End must stay on this side of the gap midpoint"
+        assert aware.end < following.start, "End must never reach the next segment's start"
+        assert abs(aware.end - 800) <= 40, "End should land on this utterance's offset at ~800ms"
+
+    def test_start_does_not_run_into_the_previous_segment(self):
+        audio_data = _multi_speech_audio(sr=16000, duration_ms=2000, spans_ms=[(200, 800), (840, 1500)])
+
+        preceding = Segment(start=200, end=800, text="First")
+        segment = Segment(start=900, end=1450, text="Second")
+
+        aware = refine_segment_timestamps(
+            audio=audio_data,
+            sr=16000,
+            segment=segment,
+            search_boundary=200,
+            previous_segment=preceding,
+        )
+
+        assert aware.start >= (preceding.end + segment.start) // 2, "Start must stay on this side of the gap midpoint"
+        assert aware.start > preceding.end, "Start must never reach into the previous segment"
+        assert abs(aware.start - 840) <= 40, "Start should land on this utterance's onset at ~840ms"
+
+    def test_clamping_emits_a_warning(self, caplog):
+        audio_data = _multi_speech_audio(sr=16000, duration_ms=2000, spans_ms=[(200, 800), (840, 1500)])
+
+        segment = Segment(start=250, end=750, text="First")
+        following = Segment(start=840, end=1500, text="Second")
+
+        with caplog.at_level("WARNING", logger="audio_segmentation.refine"):
+            refine_segment_timestamps(
+                audio=audio_data,
+                sr=16000,
+                segment=segment,
+                search_boundary=200,
+                next_segment=following,
+            )
+
+        assert any("search_boundary" in record.message for record in caplog.records), (
+            "Clamping against a neighbour must not be silent"
+        )
+
+    def test_no_warning_when_the_gap_is_wide_enough(self, caplog):
+        audio_data = _multi_speech_audio(sr=16000, duration_ms=3000, spans_ms=[(200, 800), (1800, 2400)])
+
+        segment = Segment(start=250, end=750, text="First")
+        following = Segment(start=1800, end=2400, text="Second")
+
+        with caplog.at_level("WARNING", logger="audio_segmentation.refine"):
+            refine_segment_timestamps(
+                audio=audio_data,
+                sr=16000,
+                segment=segment,
+                search_boundary=200,
+                next_segment=following,
+            )
+
+        assert not caplog.records, "A gap wider than the search boundary should not warn"
+
+    def test_overlapping_neighbours_collapse_the_window_instead_of_inverting(self):
+        """If neighbours already overlap the segment, the window must not invert."""
+        audio_data = _multi_speech_audio(sr=16000, duration_ms=2000, spans_ms=[(200, 1500)])
+
+        preceding = Segment(start=200, end=900, text="First")
+        segment = Segment(start=800, end=1200, text="Second")
+        following = Segment(start=1100, end=1500, text="Third")
+
+        refined = refine_segment_timestamps(
+            audio=audio_data,
+            sr=16000,
+            segment=segment,
+            search_boundary=200,
+            previous_segment=preceding,
+            next_segment=following,
+        )
+
+        assert refined.start >= segment.start, "Window must not expand past an overlapping previous segment"
+        assert refined.end <= segment.end, "Window must not expand past an overlapping next segment"
+        assert refined.start <= refined.end, "The refined segment must not be inverted"
+
+    def test_neighbourless_call_is_unchanged(self):
+        """Omitting neighbours must behave exactly as before."""
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=400, speech_end_ms=600)
+        segment = Segment(start=300, end=700, text="Test speech")
+
+        kwargs = dict(audio=audio_data, sr=16000, segment=segment, search_boundary=200)
+
+        assert refine_segment_timestamps(**kwargs) == refine_segment_timestamps(
+            **kwargs,
+            previous_segment=None,
+            next_segment=None,
+        )
+
+
+class TestBatchRefinement:
+    def test_batch_wires_neighbours_and_prevents_overlap(self):
+        audio_data = _multi_speech_audio(
+            sr=16000,
+            duration_ms=3000,
+            spans_ms=[(200, 800), (840, 1400), (1440, 2000)],
+        )
+
+        segments = [
+            Segment(start=250, end=750, text="First"),
+            Segment(start=900, end=1350, text="Second"),
+            Segment(start=1500, end=1950, text="Third"),
+        ]
+
+        refined = refine_segment_timestamps_batch(
+            audio=audio_data,
+            sr=16000,
+            segments=segments,
+            search_boundary=200,
+        )
+
+        assert len(refined) == len(segments)
+        assert [s.text for s in refined] == ["First", "Second", "Third"]
+
+        for earlier, later in zip(refined, refined[1:]):
+            assert earlier.end <= later.start, f"{earlier} overlaps {later}"
+
+    def test_batch_uses_original_neighbours_not_refined_ones(self):
+        """Refinement is order-independent: each segment sees the original neighbours."""
+        audio_data = _multi_speech_audio(
+            sr=16000,
+            duration_ms=3000,
+            spans_ms=[(200, 800), (840, 1400), (1440, 2000)],
+        )
+
+        segments = [
+            Segment(start=250, end=750, text="First"),
+            Segment(start=900, end=1350, text="Second"),
+            Segment(start=1500, end=1950, text="Third"),
+        ]
+
+        batched = refine_segment_timestamps_batch(
+            audio=audio_data,
+            sr=16000,
+            segments=segments,
+            search_boundary=200,
+        )
+
+        individually = [
+            refine_segment_timestamps(
+                audio=audio_data,
+                sr=16000,
+                segment=segment,
+                search_boundary=200,
+                previous_segment=segments[index - 1] if index > 0 else None,
+                next_segment=segments[index + 1] if index + 1 < len(segments) else None,
+            )
+            for index, segment in enumerate(segments)
+        ]
+
+        assert batched == individually
+
+    def test_batch_on_empty_input(self):
+        assert refine_segment_timestamps_batch(audio=np.zeros(16000), sr=16000, segments=[]) == []
+
+    def test_batch_on_a_single_segment_matches_the_neighbourless_call(self):
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=400, speech_end_ms=600)
+        segment = Segment(start=300, end=700, text="Only")
+
+        batched = refine_segment_timestamps_batch(audio=audio_data, sr=16000, segments=[segment], search_boundary=200)
+        single = refine_segment_timestamps(audio=audio_data, sr=16000, segment=segment, search_boundary=200)
+
+        assert batched == [single]
+
+    def test_pad_cannot_push_boundaries_outside_the_clamped_window(self):
+        """pad must not undo neighbour clamping and re-introduce overlap."""
+        audio_data = _multi_speech_audio(
+            sr=16000,
+            duration_ms=3000,
+            spans_ms=[(200, 800), (840, 1400), (1440, 2000)],
+        )
+
+        segments = [
+            Segment(start=250, end=750, text="First"),
+            Segment(start=900, end=1350, text="Second"),
+            Segment(start=1500, end=1950, text="Third"),
+        ]
+
+        refined = refine_segment_timestamps_batch(
+            audio=audio_data,
+            sr=16000,
+            segments=segments,
+            search_boundary=200,
+            pad=100,  # wider than every gap in this fixture
+        )
+
+        for earlier, later in zip(refined, refined[1:]):
+            assert earlier.end <= later.start, f"{earlier} overlaps {later} once padded"
+
+    def test_pad_cannot_push_the_start_below_zero(self):
+        audio_data = _synthetic_audio(sr=16000, duration_ms=1000, speech_start_ms=0, speech_end_ms=400)
+        segment = Segment(start=10, end=300, text="Test speech")
+
+        refined = refine_segment_timestamps_batch(
+            audio=audio_data,
+            sr=16000,
+            segments=[segment],
+            search_boundary=200,
+            pad=200,
+        )
+
+        assert refined[0].start >= 0, "A padded start must not become negative"
