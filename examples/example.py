@@ -5,7 +5,7 @@ from audio_segmentation import (
     load_audio,
     NemoTranscriber,
     NemoModel,
-    refine_segment_timestamps,
+    refine_segment_timestamps_batch,
     transcribe_audio,
 )
 from audio_segmentation.types.segment import Segment
@@ -31,17 +31,15 @@ def main(device_index: int = 1):
         # use_sentence_segmentation=True,
     )
 
-    segments: list[Segment] = []
-
-    for i, segment in enumerate(results.segments):
-        refined_segment = refine_segment_timestamps(
-            audio=audio,
-            sr=sr,
-            segment=segment,
-            search_boundary=150,
-        )
-
-        segments.append(refined_segment)
+    # Refine as a batch so each segment is clamped against its neighbours; refining
+    # one at a time lets a search_boundary wider than the gap pull a boundary onto
+    # the adjacent segment's speech.
+    segments: list[Segment] = refine_segment_timestamps_batch(
+        audio=audio,
+        sr=sr,
+        segments=results.segments,
+        search_boundary=150,
+    )
 
     # Output an audacity label file
     with open("example_transcription.labels", "w") as f:

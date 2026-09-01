@@ -4,6 +4,7 @@ from audio_segmentation.aligner.aligner import Aligner
 from audio_segmentation.aligner.torchaudio import AlignerModel, TorchAudioAligner
 from audio_segmentation.refine import (
     refine_segment_timestamps,
+    refine_segment_timestamps_batch,
     refine_sentence_segments,
 )
 from audio_segmentation.types.audio import Audio
@@ -22,6 +23,7 @@ __all__ = [
     "Audio",
     "load_audio",
     "refine_segment_timestamps",
+    "refine_segment_timestamps_batch",
     "refine_sentence_segments",
     "Segment",
     "SegmentationException",

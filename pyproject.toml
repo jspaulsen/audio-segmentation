@@ -22,6 +22,9 @@ explicit = true
 [project.optional-dependencies]
 nemo = [
     "cuda-python>=12.8.0",
+    # nemo-toolkit[asr] imports `datasets` at module scope without declaring it,
+    # so the Parakeet import path fails outright without this.
+    "datasets>=3.0.0",
     "nemo-toolkit[asr]>=2.2.1",
 ]
 whisperx = [
